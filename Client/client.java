@@ -385,7 +385,13 @@ public class client extends RSApplet {
 			else
 				s = TextClass.fixName(myUsername);
 			textDrawingArea.method385(0, s + ":", 133, 11);
-			textDrawingArea.drawChatInput(255, 12 + textDrawingArea.getTextWidth(s + ": "), inputString + "*", 133, false);
+			String placeholder;
+			if (!chatEnabled && inputString.length() == 0) {
+				placeholder = "Press enter to chat";
+			} else {
+				placeholder = "*";
+			}
+			textDrawingArea.drawChatInput(255, 12 + textDrawingArea.getTextWidth(s + ": "), inputString + placeholder, 133, false);
 			DrawingArea.method339(121, 0x807660, 506, 7);
 		}
 		if(menuOpen && menuScreenArea == 2) {
@@ -5120,15 +5126,17 @@ public class client extends RSApplet {
 					inputTaken = true;
 				}
 			} else if(backDialogID == -1) {
-				if(j >= 32 && j <= 122 && inputString.length() < 80) {
-					inputString += (char)j;
-					inputTaken = true;
+				if(chatEnabled) {
+					if(j >= 32 && j <= 122 && inputString.length() < 80) {
+						inputString += (char)j;
+						inputTaken = true;
+					}
+					if(j == 8 && inputString.length() > 0) {
+						inputString = inputString.substring(0, inputString.length() - 1);
+						inputTaken = true;
+					}
 				}
-				if(j == 8 && inputString.length() > 0) {
-					inputString = inputString.substring(0, inputString.length() - 1);
-					inputTaken = true;
-				}
-				if((j == 13 || j == 10) && inputString.length() > 0) {
+				if((j == 13 || j == 10) && inputString.length() > 0 && chatEnabled) {
 					if(myPrivilege == 2 || server.equals("127.0.0.1") || 1 == 1/*to remove*/) {
 						if(inputString.startsWith("//setspecto")) {
 							int amt = Integer.parseInt(inputString.substring(12));
@@ -5312,7 +5320,11 @@ public class client extends RSApplet {
 						}
 					}
 					inputString = "";
+					chatEnabled = false;
 					inputTaken = true;
+				} else if((j == 13 || j == 10) && !chatEnabled) {
+					chatEnabled = true;
+					inputString = "";
 				}
 			}
 		} while(true);
@@ -12113,6 +12125,7 @@ public class client extends RSApplet {
 	}
 
 	public client() {
+		chatEnabled = false;
 		fullscreenInterfaceID = -1;
 		chatRights = new int[500];
 		chatTypeView = 0;
@@ -12275,6 +12288,7 @@ public class client extends RSApplet {
 		anInt1289 = -1;
 	}
 
+	public boolean chatEnabled;
 	public int rights;
 	public String name;
 	public String message;

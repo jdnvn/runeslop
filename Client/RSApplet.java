@@ -339,6 +339,17 @@ public class RSApplet extends Applet implements Runnable, MouseListener, MouseMo
 			j = 4;
 		if(i == 17)
 			j = 5;
+		if(this instanceof client && ((client)this).loggedIn && !((client)this).chatEnabled) {
+			// WASD camera controls
+			if(i == KeyEvent.VK_A)  // A key = rotate left (same as left arrow)
+				j = 1;
+			if(i == KeyEvent.VK_D)  // D key = rotate right (same as right arrow)
+				j = 2;
+			if(i == KeyEvent.VK_W)  // W key = tilt up (same as up arrow)
+				j = 3;
+			if(i == KeyEvent.VK_S)  // S key = tilt down (same as down arrow)
+				j = 4;
+		}
 		if(i == 8)
 			j = 8;
 		if(i == 127)
@@ -383,6 +394,17 @@ public class RSApplet extends Applet implements Runnable, MouseListener, MouseMo
 			c = '\004';
 		if(i == 17)
 			c = '\005';
+		if(this instanceof client && ((client)this).loggedIn && !((client)this).chatEnabled) {
+			// WASD camera controls
+			if(i == KeyEvent.VK_A)  // A key
+				c = '\001';
+			if(i == KeyEvent.VK_D)  // D key
+				c = '\002';
+			if(i == KeyEvent.VK_W)  // W key
+				c = '\003';
+			if(i == KeyEvent.VK_S)  // S key
+				c = '\004';
+		}
 		if(i == 8)
 			c = '\b';
 		if(i == 127)
