@@ -518,6 +518,7 @@ public abstract class Player {
 	public abstract void update();
 
 	public int playerId = -1;
+	public int playerRecordId = -1;
 	public String playerName = null;
 	public String playerName2 = null;
 	public String playerPass = null;

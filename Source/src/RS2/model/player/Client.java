@@ -15,12 +15,14 @@ import RS2.net.Packet;
 import RS2.net.Packet.Type;
 import RS2.util.Misc;
 import RS2.util.Stream;
+import RS2.db.*;
 
 public class Client extends Player {
 
 	public byte buffer[] = null;
 	public Stream inStream = null, outStream = null;
 	private Channel session;
+	public Database database = DatabaseManager.createDatabase();
 	private ItemAssistant itemAssistant = new ItemAssistant(this);
 	private ShopAssistant shopAssistant = new ShopAssistant(this);
 	private TradeAndDuel tradeAndDuel = new TradeAndDuel(this);

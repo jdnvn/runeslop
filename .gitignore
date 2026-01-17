@@ -13,9 +13,10 @@ Source/build/
 Source/bin/Dexter.class
 Source/bin/ItemReplace.class
 
-# Player/Character data (you probably don't want to commit player accounts)
+# Player/Character data
 Source/bin/characters/
 Source/Data/characters/
+Source/Data/game.db
 *.txt
 
 # Cache files

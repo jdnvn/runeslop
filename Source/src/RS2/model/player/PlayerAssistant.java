@@ -1037,8 +1037,7 @@ public class PlayerAssistant{
 				c.getTradeAndDuel().resetDuel();
 			}
 		}
-		//PlayerSaving.getSingleton().requestSave(c.playerId);
-		PlayerSave.saveGame(c);
+		c.database.savePlayer(c);
 		c.getCombat().resetPlayerAttack();
 		resetAnimation();
 		c.startAnimation(65535);
@@ -1051,7 +1050,7 @@ public class PlayerAssistant{
 		c.damageTaken = new int[Settings.MAX_PLAYERS];
 		c.getPA().requestUpdates();
 	}
-		
+
 	/**
 	* Location change for digging, levers etc
 	**/

@@ -1,4 +1,5 @@
 package RS2;
+import RS2.db.DatabaseType;
 
 public class Settings {
 
@@ -96,6 +97,8 @@ public class Settings {
 	public static final int NPC_RANDOM_WALK_DISTANCE = 5;
 	
 	public static final int NPC_FOLLOW_DISTANCE = 10; // 10 squares
+
+	public static final DatabaseType DB_TYPE = DatabaseType.SQLITE;
 
 	/**
 	 * Teleport spells.

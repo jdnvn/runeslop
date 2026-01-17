@@ -17,6 +17,7 @@ import RS2.model.player.PlayerSave;
 import RS2.net.PacketBuilder;
 import RS2.util.ISAACCipher;
 import RS2.util.Misc;
+import RS2.db.PlayerRecord;
 
 @SuppressWarnings("all")
 public class RS2LoginProtocol extends FrameDecoder {
@@ -127,7 +128,9 @@ public class RS2LoginProtocol extends FrameDecoder {
 			returnCode = 14;
 		}
 		if (returnCode == 2) {
+			System.out.println("Loading game for player: " + cl.playerName);
 			int load = PlayerSave.loadGame(cl, cl.playerName, cl.playerPass);
+			System.out.println("Load result: " + load);
 			if (load == 0)
 				cl.addStarter = true;
 			if (load == 3) {

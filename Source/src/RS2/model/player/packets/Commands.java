@@ -5,6 +5,7 @@ import RS2.GameEngine;
 import RS2.model.player.Client;
 import RS2.model.player.PacketType;
 import RS2.util.Misc;
+import RS2.model.npc.NPCHandler;
 
 /**
  * Commands
@@ -60,6 +61,13 @@ public class Commands implements PacketType {
 					break;
 				case "xy":
 					c.sendMessage("X: " + c.currentX + " Y: " + c.currentY);
+					break;
+				case "npc":
+					if (args.length == 3) {
+						GameEngine.npcHandler.spawnNpc(c, Integer.parseInt(args[1]), Integer.parseInt(args[2]), 0, 0, 0, 0, 0, 0, 0, false, false);
+					} else {
+						c.sendMessage("Usage: '/npc npc_id x y'");
+					}
 					break;
 			}
 		}
