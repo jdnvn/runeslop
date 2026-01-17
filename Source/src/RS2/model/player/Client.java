@@ -22,7 +22,7 @@ public class Client extends Player {
 	public byte buffer[] = null;
 	public Stream inStream = null, outStream = null;
 	private Channel session;
-	public Database database = DatabaseManager.createDatabase();
+	public Database database = DatabaseManager.getInstance();
 	private ItemAssistant itemAssistant = new ItemAssistant(this);
 	private ShopAssistant shopAssistant = new ShopAssistant(this);
 	private TradeAndDuel tradeAndDuel = new TradeAndDuel(this);

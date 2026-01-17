@@ -1,10 +1,5 @@
 package RS2.model.player;
 import RS2.db.PlayerRecord;
-
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-
 import RS2.util.Misc;
 
 public class PlayerSave {
@@ -20,6 +15,13 @@ public class PlayerSave {
 			return 3;
 		}
 
+		if (!player.exists) {
+			Misc.println(playerName + ": character not found.");
+			p.newPlayer = false;
+			p.playerRecordId = player.id;
+			return 0;
+		}
+
 		if (playerPass.equalsIgnoreCase(player.password)
 			|| Misc.basicEncrypt(playerPass).equals(player.password)) {
 			System.out.println("Password matches for player " + playerName);
@@ -28,12 +30,6 @@ public class PlayerSave {
 		}
 
 		p.playerRecordId = player.id;
-
-		if (!player.exists) {
-			Misc.println(playerName + ": character not found.");
-			p.newPlayer = false;
-			return 0;
-		}
 
 		// TODO: this is just temporary, hoping to use the player object
 		// within the client class to separate concerns
@@ -72,10 +68,9 @@ public class PlayerSave {
 		for (int i = 0; i < p.friends.length; i++) {
 			p.friends[i] = player.friends[i];
 		}
-		// TODO: for some reason this is commented in the parsing logic
-		// for (int i = 0; i < p.ignores.length; i++) {
-		// 	p.ignores[i] = player.ignores[i];
-		// }
+		for (int i = 0; i < p.ignores.length; i++) {
+			p.ignores[i] = player.ignores[i];
+		}
 
 		return 13;
 	}

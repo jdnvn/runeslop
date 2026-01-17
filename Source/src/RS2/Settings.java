@@ -23,6 +23,9 @@ public class Settings {
 
 	public static final int MAX_PLAYERS = 1024;
 
+	public static final int MAX_NPCS = 10000;
+	public static final int MAX_LISTED_NPCS = 10000;
+
 	public static final int CONNECTION_DELAY = 100;
 
 	public static final int IPS_ALLOWED = 3;
@@ -98,7 +101,7 @@ public class Settings {
 	
 	public static final int NPC_FOLLOW_DISTANCE = 10; // 10 squares
 
-	public static final DatabaseType DB_TYPE = DatabaseType.SQLITE;
+	public static final DatabaseType DB_TYPE = DatabaseType.FILE;
 
 	/**
 	 * Teleport spells.

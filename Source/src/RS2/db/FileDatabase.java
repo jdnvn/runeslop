@@ -1,6 +1,8 @@
 package RS2.db;
 import RS2.model.player.Player;
 import RS2.model.player.PlayerHandler;
+import RS2.model.npc.NPCList;
+import RS2.model.npc.NPCHandler;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -12,9 +14,10 @@ import java.io.IOException;
 import RS2.util.Misc;
 
 public class FileDatabase implements Database {
-    FileDatabase() {
+    public static final String CHARACTERS_PATH = "./Data/characters/";
+    public static final String NPC_FILENAME = "./Data/CFG/npc.cfg";
 
-    }
+    FileDatabase() {}
 
     public PlayerRecord getPlayer(String playerName) {
 		String line = "";
@@ -29,8 +32,7 @@ public class FileDatabase implements Database {
         PlayerRecord p = new PlayerRecord(playerName);
 
         try {
-			characterfile = new BufferedReader(new FileReader(
-					"./Data/characters/" + playerName + ".txt"));
+			characterfile = new BufferedReader(new FileReader(CHARACTERS_PATH + playerName + ".txt"));
 			File1 = true;
 		} catch (FileNotFoundException fileex1) {
 		}
@@ -210,8 +212,7 @@ public class FileDatabase implements Database {
 
 		BufferedWriter characterfile = null;
 		try {
-			characterfile = new BufferedWriter(new FileWriter(
-					"./Data/characters/" + p.playerName + ".txt"));
+			characterfile = new BufferedWriter(new FileWriter(CHARACTERS_PATH + p.playerName + ".txt"));
 
 			/* ACCOUNT */
 			characterfile.write("[ACCOUNT]", 0, 9);
@@ -399,8 +400,72 @@ public class FileDatabase implements Database {
 			characterfile.close();
 		} catch (IOException ioexception) {
 			Misc.println(p.playerName + ": error writing file.");
+			ioexception.printStackTrace();
 			return false;
 		}
 		return true;
+    }
+
+    public NPCList[] getAllNPCs() throws Exception {
+        String line = "";
+		String token = "";
+		String token2 = "";
+		String token2_2 = "";
+		String[] token3 = new String[10];
+        NPCList[] npcs = new NPCList[NPCHandler.maxListedNPCs];
+		boolean EndOfFile = false;
+		BufferedReader characterfile = null;
+		try {
+			characterfile = new BufferedReader(new FileReader(NPC_FILENAME));
+		} catch (FileNotFoundException fileex) {
+			Misc.println(NPC_FILENAME + ": file not found.");
+			throw fileex;
+		}
+		try {
+			line = characterfile.readLine();
+		} catch (IOException ioexception) {
+			Misc.println(NPC_FILENAME + ": error loading file.");
+            characterfile.close();
+			throw ioexception;
+		}
+        int i = 0;
+		while (EndOfFile == false && line != null) {
+			line = line.trim();
+			int spot = line.indexOf("=");
+			if (spot > -1) {
+				token = line.substring(0, spot);
+				token = token.trim();
+				token2 = line.substring(spot + 1);
+				token2 = token2.trim();
+				token2_2 = token2.replaceAll("\t\t", "\t");
+				token2_2 = token2_2.replaceAll("\t\t", "\t");
+				token2_2 = token2_2.replaceAll("\t\t", "\t");
+				token2_2 = token2_2.replaceAll("\t\t", "\t");
+				token2_2 = token2_2.replaceAll("\t\t", "\t");
+				token3 = token2_2.split("\t");
+				if (token.equals("npc")) {
+					npcs[i] = new NPCList(Integer.parseInt(token3[0]), token3[1], Integer.parseInt(token3[2]), Integer.parseInt(token3[3]));
+                    i++;
+				}
+			} else {
+				if (line.equals("[ENDOFNPCLIST]")) {
+					try {
+						characterfile.close();
+					} catch (IOException ioexception) {
+					}
+					return npcs;
+				}
+			}
+			try {
+				line = characterfile.readLine();
+			} catch (IOException ioexception1) {
+				EndOfFile = true;
+			}
+		}
+		try {
+			characterfile.close();
+		} catch (IOException ioexception) {
+		}
+		return npcs;
     }
 }

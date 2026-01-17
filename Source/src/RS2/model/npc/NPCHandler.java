@@ -11,25 +11,32 @@ import RS2.GameEngine;
 import RS2.model.player.Client;
 import RS2.model.player.PlayerHandler;
 import RS2.util.Misc;
+import RS2.db.Database;
+import RS2.db.DatabaseManager;
 
 @SuppressWarnings("all")
 public class NPCHandler {
 	
-	public static int maxNPCs = 10000;
-	public static int maxListedNPCs = 10000;
+	public static int maxNPCs = Settings.MAX_NPCS;
+	public static int maxListedNPCs = Settings.MAX_LISTED_NPCS;
 	public static int maxNPCDrops = 10000;
 	public static NPC npcs[] = new NPC[maxNPCs];
 	public static NPCList NpcList[] = new NPCList[maxListedNPCs];
+	private Database database = DatabaseManager.getInstance();
 
 	public NPCHandler() {
+		System.out.println("NPCHandler: Initializing...");
 		for (int i = 0; i < maxNPCs; i++) {
 			npcs[i] = null;
 		}
 		for (int i = 0; i < maxListedNPCs; i++) {
 			NpcList[i] = null;
 		}
-		loadNPCList("./Data/CFG/npc.cfg");
+		System.out.println("NPCHandler: Arrays initialized, loading NPC list...");
+		loadNPCList();
+		System.out.println("NPCHandler: NPC list loaded, loading auto spawn...");
 		loadAutoSpawn("./Data/CFG/spawn-config.cfg");
+		System.out.println("NPCHandler: Initialization complete");
 	}
 
 	public void multiAttackGfx(int i, int gfx) {
@@ -868,7 +875,7 @@ public class NPCHandler {
 		npcs[slot] = newNPC;
 	}
 
-	public void newNPCList(int npcType, String npcName, int combat, int HP) {
+	public void newNPCList(NPCList npcList) {
 		// first, search for a free slot
 		int slot = -1;
 		for (int i = 0; i < maxListedNPCs; i++) {
@@ -881,11 +888,7 @@ public class NPCHandler {
 		if (slot == -1)
 			return; // no free slot found
 
-		NPCList newNPCList = new NPCList(npcType);
-		newNPCList.npcName = npcName;
-		newNPCList.npcCombat = combat;
-		newNPCList.npcHealth = HP;
-		NpcList[slot] = newNPCList;
+		NpcList[slot] = npcList;
 	}
 
 	public void process() {
@@ -2143,66 +2146,21 @@ public class NPCHandler {
 		return "nothing";
 	}
 
-	public boolean loadNPCList(String FileName) {
-		String line = "";
-		String token = "";
-		String token2 = "";
-		String token2_2 = "";
-		String[] token3 = new String[10];
-		boolean EndOfFile = false;
-		int ReadMode = 0;
-		BufferedReader characterfile = null;
+	public boolean loadNPCList() {
+		NPCList[] npcs;
 		try {
-			characterfile = new BufferedReader(new FileReader("./" + FileName));
-		} catch (FileNotFoundException fileex) {
-			Misc.println(FileName + ": file not found.");
+			npcs = database.getAllNPCs();
+		} catch(Exception e) {
+			System.err.println("Error loading NPC list from database:");
+			e.printStackTrace();
 			return false;
 		}
-		try {
-			line = characterfile.readLine();
-		} catch (IOException ioexception) {
-			Misc.println(FileName + ": error loading file.");
-			return false;
+		
+		for (int i = 0; i < npcs.length; i++) {
+			NPCList npc = npcs[i];
+			if (npc != null) newNPCList(npc);
 		}
-		while (EndOfFile == false && line != null) {
-			line = line.trim();
-			int spot = line.indexOf("=");
-			if (spot > -1) {
-				token = line.substring(0, spot);
-				token = token.trim();
-				token2 = line.substring(spot + 1);
-				token2 = token2.trim();
-				token2_2 = token2.replaceAll("\t\t", "\t");
-				token2_2 = token2_2.replaceAll("\t\t", "\t");
-				token2_2 = token2_2.replaceAll("\t\t", "\t");
-				token2_2 = token2_2.replaceAll("\t\t", "\t");
-				token2_2 = token2_2.replaceAll("\t\t", "\t");
-				token3 = token2_2.split("\t");
-				if (token.equals("npc")) {
-					newNPCList(Integer.parseInt(token3[0]), token3[1],
-							Integer.parseInt(token3[2]),
-							Integer.parseInt(token3[3]));
-				}
-			} else {
-				if (line.equals("[ENDOFNPCLIST]")) {
-					try {
-						characterfile.close();
-					} catch (IOException ioexception) {
-					}
-					return true;
-				}
-			}
-			try {
-				line = characterfile.readLine();
-			} catch (IOException ioexception1) {
-				EndOfFile = true;
-			}
-		}
-		try {
-			characterfile.close();
-		} catch (IOException ioexception) {
-		}
-		return false;
+		System.out.println("Successfully loaded NPC list");
+		return true;
 	}
-
 }

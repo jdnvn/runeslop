@@ -1,5 +1,6 @@
 package RS2.db;
 import RS2.model.player.Player;
+import RS2.model.npc.NPCList;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -7,7 +8,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.PreparedStatement;
-import java.sql.ResultSetMetaData;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 
 import RS2.Settings;
 import RS2.util.Misc;
@@ -18,10 +21,15 @@ public class SqliteDatabase implements Database {
     private Connection conn;
 
     SqliteDatabase() {
+        System.out.println("SqliteDatabase: Initializing...");
         try {
             Class.forName("org.sqlite.JDBC");
+            System.out.println("SqliteDatabase: JDBC driver loaded");
             connect();
+            System.out.println("SqliteDatabase: Connected, creating tables...");
             createTables();
+            System.out.println("SqliteDatabase: Tables created, loading NPCs from config...");
+            loadNPCsFromConfig();
             Misc.println("SQLite database initialized");
         } catch (ClassNotFoundException e) {
             System.out.println("Error loading SQLite JDBC driver");
@@ -135,8 +143,76 @@ public class SqliteDatabase implements Database {
                     "FOREIGN KEY (player_id) REFERENCES players(id)" +
                     ")";
             statement.execute(sql);
+
+            sql = "CREATE TABLE IF NOT EXISTS npcs (" +
+                    "npc_id INTEGER NOT NULL," +
+                    "name TEXT NOT NULL," +
+                    "combat INTEGER NOT NULL," +
+                    "health INTEGER NOT NULL," +
+                    "PRIMARY KEY (npc_id)" +
+                    ")";
+            statement.execute(sql);
         } catch (SQLException e) {
             System.out.println("Error creating tables");
+            e.printStackTrace();
+        }
+    }
+
+    private void loadNPCsFromConfig() {
+        try (Statement statement = conn.createStatement()) {
+            // Check if NPCs are already loaded
+            ResultSet rs = statement.executeQuery("SELECT COUNT(*) as count FROM npcs");
+            if (rs.next() && rs.getInt("count") > 0) {
+                System.out.println("NPCs already loaded in database, skipping config import");
+                rs.close();
+                return;
+            }
+            rs.close();
+
+            // Load NPCs from config file
+            BufferedReader reader = new BufferedReader(new FileReader("./Data/cfg/npc.cfg"));
+            String line;
+            int count = 0;
+            
+            PreparedStatement insertStmt = conn.prepareStatement(
+                "INSERT OR IGNORE INTO npcs (npc_id, name, combat, health) VALUES (?, ?, ?, ?)"
+            );
+            
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("//")) {
+                    continue;
+                }
+                
+                // Parse: npc = 0		Hans				0	0
+                if (line.startsWith("npc = ")) {
+                    String[] parts = line.substring(6).split("\\s+");
+                    if (parts.length >= 4) {
+                        try {
+                            int npcId = Integer.parseInt(parts[0]);
+                            String name = parts[1].replace("_", " ");
+                            int combat = Integer.parseInt(parts[2]);
+                            int health = Integer.parseInt(parts[3]);
+                            
+                            insertStmt.setInt(1, npcId);
+                            insertStmt.setString(2, name);
+                            insertStmt.setInt(3, combat);
+                            insertStmt.setInt(4, health);
+                            insertStmt.executeUpdate();
+                            count++;
+                        } catch (NumberFormatException e) {
+                            System.err.println("Error parsing NPC line: " + line);
+                        }
+                    }
+                }
+            }
+            
+            reader.close();
+            insertStmt.close();
+            System.out.println("Loaded " + count + " NPCs from config into database");
+            
+        } catch (SQLException | IOException e) {
+            System.err.println("Error loading NPCs from config");
             e.printStackTrace();
         }
     }
@@ -179,8 +255,6 @@ public class SqliteDatabase implements Database {
             equipment = statement.executeQuery("SELECT * FROM player_equipment WHERE player_id = '" + player.id + "'");
             
             while (equipment.next()) {
-                ResultSetMetaData rsmd = equipment.getMetaData();
-                System.out.println("Equipment: " + rsmd.getColumnName(1) + " " + rsmd.getColumnName(2));
                 player.playerEquipment[equipment.getInt("slot")] = equipment.getInt("item_id");
                 player.playerEquipmentN[equipment.getInt("slot")] = equipment.getInt("amount");
             }
@@ -447,4 +521,34 @@ public class SqliteDatabase implements Database {
         }
         return true;
     }
+
+    public NPCList[] getAllNPCs() throws Exception {
+        NPCList[] npcs = new NPCList[Settings.MAX_LISTED_NPCS];
+        int index = 0;
+        
+        try (Statement statement = conn.createStatement()) {
+            ResultSet rs = statement.executeQuery("SELECT npc_id, name, combat, health FROM npcs ORDER BY npc_id");
+            
+            while (rs.next() && index < npcs.length) {
+                int npcId = rs.getInt("npc_id");
+                String name = rs.getString("name");
+                int combat = rs.getInt("combat");
+                int health = rs.getInt("health");
+                
+                npcs[index] = new NPCList(npcId, name, combat, health);
+                index++;
+            }
+            
+            rs.close();
+            System.out.println("Loaded " + index + " NPCs from database");
+        } catch (SQLException e) {
+            System.err.println("Error loading NPCs from database");
+            e.printStackTrace();
+            throw e;
+        }
+        
+        return npcs;
+    }
+
+
 }
