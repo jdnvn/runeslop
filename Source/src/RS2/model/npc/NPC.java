@@ -37,6 +37,7 @@ public class NPC {
 	public boolean faceToUpdateRequired;
 	public int firstAttacker;
 	public String forcedText;
+	public String description;
 
 	public NPC(int _npcId, int _npcType) {
 		npcId = _npcId;
@@ -46,6 +47,29 @@ public class NPC {
 		applyDead = false;
 		actionTimer = 0;
 		randomWalk = true;
+	}
+
+	public NPC(int npcType, int spawnX, int spawnY, int height, int walk, int maxhit, int attack, int defence, String description) {
+		this.npcType = npcType; // npcType defines what the NPC is
+		this.spawnX = spawnX;
+		this.spawnY = spawnY;
+		this.absX = spawnX; // Set absolute position
+		this.absY = spawnY;
+		this.makeX = spawnX; // Set respawn position
+		this.makeY = spawnY;
+		this.heightLevel = height;
+		this.walkingType = walk;
+		this.maxHit = maxhit;
+		this.attack = attack;
+		this.defence = defence;
+		this.description = description;
+		this.HP = 100; // Default HP
+		this.MaxHP = 100;
+		this.direction = -1;
+		this.isDead = false;
+		this.applyDead = false;
+		this.actionTimer = 0;
+		this.randomWalk = true;
 	}
 
 	public void faceTo(int playerId) {

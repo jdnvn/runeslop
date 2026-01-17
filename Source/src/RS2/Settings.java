@@ -101,7 +101,7 @@ public class Settings {
 	
 	public static final int NPC_FOLLOW_DISTANCE = 10; // 10 squares
 
-	public static final DatabaseType DB_TYPE = DatabaseType.FILE;
+	public static final DatabaseType DB_TYPE = DatabaseType.SQLITE;
 
 	/**
 	 * Teleport spells.

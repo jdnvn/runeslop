@@ -6,6 +6,8 @@ import RS2.model.player.Client;
 import RS2.model.player.PacketType;
 import RS2.util.Misc;
 import RS2.model.npc.NPCHandler;
+import RS2.model.npc.NPC;
+import RS2.db.DatabaseManager;
 
 /**
  * Commands
@@ -30,14 +32,13 @@ public class Commands implements PacketType {
 				}
 				return;
 			}
+
 		// only admins can execute commands for now
 		if (c.playerRights < 2) return;
 		if (playerCommand.length() > 1 && playerCommand.startsWith("/")) {
 			String commandString = playerCommand.substring(1);
 			String[] args = commandString.split("\\s+");
 			String action = args[0];
-			System.out.println(action);
-			System.out.println(args.length);
 			switch(action) {
 				case "item":
 					if (args.length == 3) {
@@ -60,13 +61,55 @@ public class Commands implements PacketType {
 					}
 					break;
 				case "xy":
-					c.sendMessage("X: " + c.currentX + " Y: " + c.currentY);
+					c.sendMessage("X: " + c.absX + " Y: " + c.absY);
 					break;
 				case "npc":
-					if (args.length == 3) {
-						GameEngine.npcHandler.spawnNpc(c, Integer.parseInt(args[1]), Integer.parseInt(args[2]), 0, 0, 0, 0, 0, 0, 0, false, false);
+					int npcId;
+					int x;
+					int y;
+					int height;
+					int walk;
+					int hp;
+					int maxhit;
+					int attack;
+					int defence;
+					boolean attackPlayer;
+					boolean headIcon;
+					if (args.length == 4) {
+						npcId = Integer.parseInt(args[1]);
+						x = Integer.parseInt(args[2]);
+						y = Integer.parseInt(args[3]);
+						height = 0;
+						walk = 0;
+						hp = 100; // Default HP
+						maxhit = 0;
+						attack = 0;
+						defence = 0;
+						attackPlayer = false;
+						headIcon = false;
+					} else if (args.length == 2) {
+						npcId = Integer.parseInt(args[1]);
+						x = c.absX;
+						y = c.absY;
+						height = 0;
+						walk = 0;
+						hp = 100; // Default HP
+						maxhit = 0;
+						attack = 0;
+						defence = 0;
+						attackPlayer = false;
+						headIcon = false;
 					} else {
-						c.sendMessage("Usage: '/npc npc_id x y'");
+						c.sendMessage("Usage: '/npc npc_id x y' or /npc npc_id for current location");
+						return;
+					}
+					NPC npc = new NPC(npcId, x, y, height, walk, maxhit, attack, defence, "");
+					GameEngine.npcHandler.spawnNpc2(npcId, x, y, height, walk, hp, maxhit, attack, defence);
+					try {
+						DatabaseManager.getInstance().saveSpawnedNPC(npc);
+						c.sendMessage("NPC spawned and saved");
+					} catch (Exception e) {
+						c.sendMessage("NPC spawned but failed to save");
 					}
 					break;
 			}

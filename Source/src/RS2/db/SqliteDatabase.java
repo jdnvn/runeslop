@@ -1,6 +1,7 @@
 package RS2.db;
 import RS2.model.player.Player;
 import RS2.model.npc.NPCList;
+import RS2.model.npc.NPC;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -152,6 +153,20 @@ public class SqliteDatabase implements Database {
                     "PRIMARY KEY (npc_id)" +
                     ")";
             statement.execute(sql);
+
+            sql = "CREATE TABLE IF NOT EXISTS spawned_npcs (" +
+                    "npc_id INTEGER NOT NULL," +
+                    "spawn_x INTEGER NOT NULL," +
+                    "spawn_y INTEGER NOT NULL," +
+                    "height INTEGER NOT NULL," +
+                    "walk INTEGER NOT NULL," +
+                    "maxhit INTEGER NOT NULL," +
+                    "attack INTEGER NOT NULL," +
+                    "defence INTEGER NOT NULL," +
+                    "description TEXT," +
+                    "PRIMARY KEY (npc_id)" +
+                    ")";
+            statement.execute(sql);
         } catch (SQLException e) {
             System.out.println("Error creating tables");
             e.printStackTrace();
@@ -253,7 +268,7 @@ public class SqliteDatabase implements Database {
             playerRecord.close();
 
             equipment = statement.executeQuery("SELECT * FROM player_equipment WHERE player_id = '" + player.id + "'");
-            
+
             while (equipment.next()) {
                 player.playerEquipment[equipment.getInt("slot")] = equipment.getInt("item_id");
                 player.playerEquipmentN[equipment.getInt("slot")] = equipment.getInt("amount");
@@ -403,6 +418,7 @@ public class SqliteDatabase implements Database {
                 preparedStatementAppearance.setInt(25, player.playerAppearance[10]);
                 preparedStatementAppearance.setInt(26, player.playerAppearance[11]);
                 preparedStatementAppearance.setInt(27, player.playerAppearance[12]);
+                System.out.println("preparedStatementAppearance: " + preparedStatementAppearance.toString());
                 preparedStatementAppearance.executeUpdate();
                 preparedStatementAppearance.close();
             }
@@ -550,5 +566,58 @@ public class SqliteDatabase implements Database {
         return npcs;
     }
 
+    public NPC[] getAllSpawnedNPCs() throws Exception {
+        NPC[] spawnedNPCs = new NPC[Settings.MAX_NPCS];
+        int index = 0;
+        
+        try (Statement statement = conn.createStatement()) {
+            ResultSet rs = statement.executeQuery("SELECT npc_id, spawn_x, spawn_y, height, walk, maxhit, attack, defence, description FROM spawned_npcs ORDER BY npc_id");
+            
+            while (rs.next() && index < spawnedNPCs.length) {
+                int npcId = rs.getInt("npc_id");
+                int spawnX = rs.getInt("spawn_x");
+                int spawnY = rs.getInt("spawn_y");
+                int height = rs.getInt("height");
+                int walk = rs.getInt("walk");
+                int maxhit = rs.getInt("maxhit");
+                int attack = rs.getInt("attack");
+                int defence = rs.getInt("defence");
+                String description = rs.getString("description");
+                
+                spawnedNPCs[index] = new NPC(npcId, spawnX, spawnY, height, walk, maxhit, attack, defence, description);
+                index++;
+            }
+            
+            rs.close();
+            System.out.println("Loaded " + index + " spawned NPCs from database");
+        } catch (SQLException e) {
+            System.err.println("Error loading spawned NPCs from database");
+            e.printStackTrace();
+            throw e;
+        }
+        
+        return spawnedNPCs;
+    }
 
+    public void saveSpawnedNPC(NPC npc) throws Exception {
+        try {
+            PreparedStatement preparedStatement = conn.prepareStatement("INSERT INTO spawned_npcs (npc_id, spawn_x, spawn_y, height, walk, maxhit, attack, defence, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            preparedStatement.setInt(1, npc.npcId);
+            preparedStatement.setInt(2, npc.spawnX);
+            preparedStatement.setInt(3, npc.spawnY);
+            preparedStatement.setInt(4, npc.heightLevel);
+            preparedStatement.setInt(5, npc.walkingType);
+            preparedStatement.setInt(6, npc.maxHit);
+            preparedStatement.setInt(7, npc.attack);
+            preparedStatement.setInt(8, npc.defence);
+            preparedStatement.setString(9, npc.description);
+            System.out.println("saveSpawnedNPC preparedStatement: " + preparedStatement.toString());
+            preparedStatement.executeUpdate();
+            preparedStatement.close();
+        } catch (SQLException e) {
+            System.err.println("Error saving spawned NPC");
+            e.printStackTrace();
+            throw e;
+        }
+    }
 }

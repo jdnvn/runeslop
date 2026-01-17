@@ -3,6 +3,8 @@ import RS2.model.player.Player;
 import RS2.model.player.PlayerHandler;
 import RS2.model.npc.NPCList;
 import RS2.model.npc.NPCHandler;
+import RS2.model.npc.NPC;
+import RS2.Settings;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -16,6 +18,7 @@ import RS2.util.Misc;
 public class FileDatabase implements Database {
     public static final String CHARACTERS_PATH = "./Data/characters/";
     public static final String NPC_FILENAME = "./Data/CFG/npc.cfg";
+    public static final String SPAWNED_NPCS_FILENAME = "./Data/CFG/spawn-config.cfg";
 
     FileDatabase() {}
 
@@ -467,5 +470,107 @@ public class FileDatabase implements Database {
 		} catch (IOException ioexception) {
 		}
 		return npcs;
+    }
+
+    public NPC[] getAllSpawnedNPCs() throws Exception {
+        String line = "";
+		String token = "";
+		String token2 = "";
+		String token2_2 = "";
+		String[] token3 = new String[10];
+		boolean EndOfFile = false;
+		int ReadMode = 0;
+		BufferedReader characterfile = null;
+		try {
+			characterfile = new BufferedReader(new FileReader(SPAWNED_NPCS_FILENAME));
+		} catch (FileNotFoundException fileex) {
+			Misc.println(SPAWNED_NPCS_FILENAME + ": file not found.");
+			throw fileex;
+		}
+		try {
+			line = characterfile.readLine();
+		} catch (IOException ioexception) {
+			Misc.println(SPAWNED_NPCS_FILENAME + ": error loading file.");
+			characterfile.close();
+			throw ioexception;
+		}
+        int i = 0;
+        NPC[] spawnedNPCs = new NPC[Settings.MAX_NPCS];
+		while (EndOfFile == false && line != null) {
+			line = line.trim();
+			int spot = line.indexOf("=");
+			if (spot > -1) {
+				token = line.substring(0, spot);
+				token = token.trim();
+				token2 = line.substring(spot + 1);
+				token2 = token2.trim();
+				token2_2 = token2.trim();
+				token3 = token2_2.split("\\s+");
+				if (token.equals("spawn")) {
+					int npcId = Integer.parseInt(token3[0]);
+					int spawnX = Integer.parseInt(token3[1]);
+					int spawnY = Integer.parseInt(token3[2]);
+					int height = Integer.parseInt(token3[3]);
+					int walk = Integer.parseInt(token3[4]);
+					int maxhit = Integer.parseInt(token3[5]);
+					int attack = Integer.parseInt(token3[6]);
+					int defence = Integer.parseInt(token3[7]);
+					String description = token3.length > 8 ? token3[8] : "";
+					spawnedNPCs[i] = new NPC(npcId, spawnX, spawnY, height, walk, maxhit, attack, defence, description);
+					i++;
+				}
+			} else {
+				if (line.equals("[ENDOFSPAWNLIST]")) {
+					try {
+						characterfile.close();
+					} catch (IOException ioexception) {
+					}
+					return spawnedNPCs;
+				}
+			}
+			try {
+				line = characterfile.readLine();
+			} catch (IOException ioexception1) {
+				EndOfFile = true;
+			}
+		}
+		try {
+			characterfile.close();
+		} catch (IOException ioexception) {
+		}
+		return spawnedNPCs;
+    }
+
+    private NPCList getNPCDetails(int npcId) {
+        try {
+            NPCList[] allNPCs = getAllNPCs();
+            for (NPCList npc : allNPCs) {
+                if (npc != null && npc.npcId == npcId) {
+                    return npc;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error looking up NPC " + npcId);
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public void saveSpawnedNPC(NPC npc) throws Exception {
+        BufferedWriter characterfile = null;
+        try {
+            characterfile = new BufferedWriter(new FileWriter(SPAWNED_NPCS_FILENAME));
+        } catch (IOException ioexception) {
+            Misc.println(SPAWNED_NPCS_FILENAME + ": error writing file.");
+            ioexception.printStackTrace();
+            throw ioexception;
+        }
+        writeSpawnedNPC(characterfile, npc);
+        characterfile.close();
+    }
+
+    private void writeSpawnedNPC(BufferedWriter characterfile, NPC npc) throws IOException {
+        characterfile.write("spawn = " + npc.npcId + " " + npc.spawnX + " " + npc.spawnY + " " + npc.heightLevel + " " + npc.walkingType + " " + npc.maxHit + " " + npc.attack + " " + npc.defence + " " + npc.description);
+        characterfile.newLine();
     }
 }

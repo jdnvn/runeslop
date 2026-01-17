@@ -35,7 +35,7 @@ public class NPCHandler {
 		System.out.println("NPCHandler: Arrays initialized, loading NPC list...");
 		loadNPCList();
 		System.out.println("NPCHandler: NPC list loaded, loading auto spawn...");
-		loadAutoSpawn("./Data/CFG/spawn-config.cfg");
+		loadAutoSpawn();
 		System.out.println("NPCHandler: Initialization complete");
 	}
 
@@ -846,8 +846,7 @@ public class NPCHandler {
 		}
 	}
 
-	public void newNPC(int npcType, int x, int y, int heightLevel,
-			int WalkingType, int HP, int maxHit, int attack, int defence) {
+	public void newNPC(NPC npc) {
 		// first, search for a free slot
 		int slot = -1;
 		for (int i = 1; i < maxNPCs; i++) {
@@ -859,20 +858,8 @@ public class NPCHandler {
 
 		if (slot == -1)
 			return; // no free slot found
-
-		NPC newNPC = new NPC(slot, npcType);
-		newNPC.absX = x;
-		newNPC.absY = y;
-		newNPC.makeX = x;
-		newNPC.makeY = y;
-		newNPC.heightLevel = heightLevel;
-		newNPC.walkingType = WalkingType;
-		newNPC.HP = HP;
-		newNPC.MaxHP = HP;
-		newNPC.maxHit = maxHit;
-		newNPC.attack = attack;
-		newNPC.defence = defence;
-		npcs[slot] = newNPC;
+		npc.npcId = slot;
+		npcs[slot] = npc;
 	}
 
 	public void newNPCList(NPCList npcList) {
@@ -1126,6 +1113,7 @@ public class NPCHandler {
 									npcs[i].absY);
 						}
 						if (npcs[i].npcType == 2745) {
+							// TODO: lol no jad death?
 							// handleJadDeath(i);
 						}
 					} else if (npcs[i].actionTimer == 0
@@ -1134,19 +1122,9 @@ public class NPCHandler {
 						if (player != null) {
 							npcs[i] = null;
 						} else {
-							int old1 = npcs[i].npcType;
-							int old2 = npcs[i].makeX;
-							int old3 = npcs[i].makeY;
-							int old4 = npcs[i].heightLevel;
-							int old5 = npcs[i].walkingType;
-							int old6 = npcs[i].MaxHP;
-							int old7 = npcs[i].maxHit;
-							int old8 = npcs[i].attack;
-							int old9 = npcs[i].defence;
-
+							NPC newNPC = new NPC(npcs[i].npcType, npcs[i].spawnX, npcs[i].spawnY, npcs[i].heightLevel, npcs[i].walkingType, npcs[i].maxHit, npcs[i].attack, npcs[i].defence, npcs[i].description);
 							npcs[i] = null;
-							newNPC(old1, old2, old3, old4, old5, old6, old7,
-									old8, old9);
+							newNPC(newNPC);
 						}
 					}
 				}
@@ -2059,69 +2037,20 @@ public class NPCHandler {
 		return 1;
 	}
 
-	public boolean loadAutoSpawn(String FileName) {
-		String line = "";
-		String token = "";
-		String token2 = "";
-		String token2_2 = "";
-		String[] token3 = new String[10];
-		boolean EndOfFile = false;
-		int ReadMode = 0;
-		BufferedReader characterfile = null;
+	public boolean loadAutoSpawn() {
+		NPC[] spawnedNPCs;
 		try {
-			characterfile = new BufferedReader(new FileReader("./" + FileName));
-		} catch (FileNotFoundException fileex) {
-			Misc.println(FileName + ": file not found.");
+			spawnedNPCs = database.getAllSpawnedNPCs();
+		} catch (Exception e) {
+			System.err.println("Error loading auto spawn from database:");
+			e.printStackTrace();
 			return false;
 		}
-		try {
-			line = characterfile.readLine();
-		} catch (IOException ioexception) {
-			Misc.println(FileName + ": error loading file.");
-			return false;
+		for (NPC spawnedNPC : spawnedNPCs) {
+			if (spawnedNPC != null) newNPC(spawnedNPC);
 		}
-		while (EndOfFile == false && line != null) {
-			line = line.trim();
-			int spot = line.indexOf("=");
-			if (spot > -1) {
-				token = line.substring(0, spot);
-				token = token.trim();
-				token2 = line.substring(spot + 1);
-				token2 = token2.trim();
-				token2_2 = token2.trim();
-				token3 = token2_2.split("\\s+");
-				if (token.equals("spawn")) {
-					newNPC(Integer.parseInt(token3[0]),
-							Integer.parseInt(token3[1]),
-							Integer.parseInt(token3[2]),
-							Integer.parseInt(token3[3]),
-							Integer.parseInt(token3[4]),
-							getNpcListHP(Integer.parseInt(token3[0])),
-							Integer.parseInt(token3[5]),
-							Integer.parseInt(token3[6]),
-							Integer.parseInt(token3[7]));
-
-				}
-			} else {
-				if (line.equals("[ENDOFSPAWNLIST]")) {
-					try {
-						characterfile.close();
-					} catch (IOException ioexception) {
-					}
-					return true;
-				}
-			}
-			try {
-				line = characterfile.readLine();
-			} catch (IOException ioexception1) {
-				EndOfFile = true;
-			}
-		}
-		try {
-			characterfile.close();
-		} catch (IOException ioexception) {
-		}
-		return false;
+		System.out.println("Successfully loaded auto spawn");
+		return true;
 	}
 
 	public int getNpcListHP(int npcId) {

@@ -8,7 +8,6 @@ public class PlayerSave {
 	 **/
 	public static int loadGame(Client p, String playerName, String playerPass) {
 		PlayerRecord player = p.database.getPlayer(playerName);
-		System.out.println("Player record: " + player.toString());
 
 		if (player.loadError) {
 			Misc.println(playerName + ": error loading game.");
@@ -16,9 +15,17 @@ public class PlayerSave {
 		}
 
 		if (!player.exists) {
-			Misc.println(playerName + ": character not found.");
-			p.newPlayer = false;
-			p.playerRecordId = player.id;
+			Misc.println(playerName + ": character not found, creating new player.");
+			p.newPlayer = true;
+			if (p.database.savePlayer(p)) {
+				PlayerRecord newPlayerRecord = p.database.getPlayer(playerName);
+				p.playerRecordId = newPlayerRecord.id;
+				Misc.println(playerName + ": new player saved with ID " + p.playerRecordId);
+			} else {
+				Misc.println(playerName + ": failed to create new player record.");
+				p.playerRecordId = -1;
+				return 3;
+			}
 			return 0;
 		}
 
