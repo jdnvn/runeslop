@@ -1,0 +1,91 @@
+# Compiled class files
+*.class
+
+# Client compiled files
+Client/*.class
+Client/sign/*.class
+
+# Server compiled files
+Source/bin/RS2/
+
+# Build directories
+Source/build/
+Source/bin/Dexter.class
+Source/bin/ItemReplace.class
+
+# Player/Character data (you probably don't want to commit player accounts)
+Source/bin/characters/
+Source/Data/characters/
+*.txt
+
+# Cache files
+Source/bin/cache/
+Source/Data/cache/
+*.dat
+*.idx0
+*.idx1
+*.idx2
+*.idx3
+*.idx4
+
+# Log files
+*.log
+logs/
+
+# IDE specific files
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+.DS_Store
+*.swp
+*.swo
+*~
+
+# NetBeans specific
+nbproject/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# Eclipse specific
+.metadata/
+bin/
+tmp/
+*.tmp
+local.properties
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# JAR files
+# *.jar
+# But keep the dependencies:
+!Source/deps/*.jar
+!Client/*.jar
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+
+# Server specific
+Source/Data/Data.txt
+
+# Build properties
+Source/build/built-jar.properties
