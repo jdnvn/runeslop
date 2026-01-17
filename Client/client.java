@@ -6795,9 +6795,7 @@ public class client extends RSApplet {
 			else
 			if((j5 & 4) != 0)
 				k3--;
-		}
-//	if(cancelWalk) { return i4 > 0; }
-	
+		}	
 
 		if(i4 > 0)
 		{
@@ -6913,9 +6911,7 @@ public class client extends RSApplet {
 			if((l & 1) != 0)
 			{
 				npc.textSpoken = stream.readString();
-				npc.textCycle = 100;
-//	entityMessage(npc);
-	
+				npc.textCycle = 100;	
 			}
 			if((l & 0x40) != 0)
 			{

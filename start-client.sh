@@ -2,7 +2,7 @@
 # RuneScape Private Server - Client Launcher
 
 echo "=========================================="
-echo "  Clean PI - Client Launcher"
+echo "  Client Launcher"
 echo "=========================================="
 echo ""
 

@@ -76,7 +76,7 @@ public class PlayerAssistant{
 		c.updateRequired = true;
 	}
 	
-		public void movePlayer(int x, int y, int h) {
+	public void movePlayer(int x, int y, int h) {
 		c.resetWalkingQueue();
 		c.teleportToX = x;
         c.teleportToY = y;

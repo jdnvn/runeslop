@@ -2085,12 +2085,8 @@ public class NPCHandler {
 				token = token.trim();
 				token2 = line.substring(spot + 1);
 				token2 = token2.trim();
-				token2_2 = token2.replaceAll("\t\t", "\t");
-				token2_2 = token2_2.replaceAll("\t\t", "\t");
-				token2_2 = token2_2.replaceAll("\t\t", "\t");
-				token2_2 = token2_2.replaceAll("\t\t", "\t");
-				token2_2 = token2_2.replaceAll("\t\t", "\t");
-				token3 = token2_2.split("\t");
+				token2_2 = token2.trim();
+				token3 = token2_2.split("\\s+");
 				if (token.equals("spawn")) {
 					newNPC(Integer.parseInt(token3[0]),
 							Integer.parseInt(token3[1]),
