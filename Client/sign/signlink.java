@@ -1,18 +1,28 @@
+// Decompiled by Jad v1.5.8f. Copyright 2001 Pavel Kouznetsov.
+// Jad home page: http://www.kpdus.com/jad.html
+// Decompiler options: packimports(3)
+// Source File Name:   signlink.java
+
 package sign;
 
 import java.applet.Applet;
 import java.io.*;
 import java.net.*;
 
-public final class signlink implements Runnable {
+public final class signlink
+    implements Runnable
+{
 
-    public static void startpriv(InetAddress inetaddress) {
+    public static void startpriv(InetAddress inetaddress)
+    {
         threadliveid = (int)(Math.random() * 99999999D);
-        if(active) {
-            try {
+        if(active)
+        {
+            try
+            {
                 Thread.sleep(500L);
-            } catch(Exception _ex) {
-			}
+            }
+            catch(Exception _ex) { }
             active = false;
         }
         socketreq = 0;
@@ -25,10 +35,11 @@ public final class signlink implements Runnable {
         thread.setDaemon(true);
         thread.start();
         while(!active)
-            try {
+            try
+            {
                 Thread.sleep(50L);
-            } catch(Exception _ex) {
-			}
+            }
+            catch(Exception _ex) { }
     }
 
     public void run()
@@ -39,8 +50,8 @@ public final class signlink implements Runnable {
         try
         {
             File file = new File(s + "main_file_cache.dat");
-            //if(file.exists() && file.length() > 150000000)
-            //    file.delete();
+            if(file.exists() && file.length() > 0x3200000L)
+                file.delete();
             cache_dat = new RandomAccessFile(s + "main_file_cache.dat", "rw");
             for(int j = 0; j < 5; j++)
                 cache_idx[j] = new RandomAccessFile(s + "main_file_cache.idx" + j, "rw");
@@ -128,82 +139,118 @@ public final class signlink implements Runnable {
 
     }
 
-	public static String findcachedir() {
-        String[] possibleFolders = {
-            "C:/", "D:", "E:",
-            "/tmp/", "/"
-        };
-        String subfolder = "CleanPICache/";
-        for(String folder : possibleFolders)
-            if(new File(folder).exists()) {
-                if(new File(folder + subfolder).exists()
-                || new File(folder + subfolder).mkdirs())
-                    return folder + subfolder;
-            }
-        return null;
-    }
-	
-	public static String findSecondDir() {
-        String[] possibleFolders = {
-            "C:/", "D:", "E:",
-            "/tmp/", "/"
-        };
-        String subfolder = ".CleanPICache/";
-        for(String folder : possibleFolders)
-            if(new File(folder).exists()) {
-                if(new File(folder + subfolder).exists()
-                || new File(folder + subfolder).mkdirs())
-                    return folder + subfolder;
-            }
-        return null;
-    }
-	
-
-    private static int getuid(String s) {
-        return 234523;
+    public static String findcachedir() {
+        return "./Cache/";
     }
 
-    public static synchronized Socket opensocket(int i) throws IOException {
+    public static String findcachedirORIG()
+    {
+        String as[] = {
+            "c:/windows/", "c:/winnt/", "d:/windows/", "d:/winnt/", "e:/windows/", "e:/winnt/", "f:/windows/", "f:/winnt/", "c:/", "~/",
+            "/tmp/", "", "c:/rscache", "/rscache"
+        };
+        if(storeid < 32 || storeid > 34)
+            storeid = 32;
+        String s = ".file_store_" + storeid;
+        for(int i = 0; i < as.length; i++)
+            try
+            {
+                String s1 = as[i];
+                if(s1.length() > 0)
+                {
+                    File file = new File(s1);
+                    if(!file.exists())
+                        continue;
+                }
+                File file1 = new File(s1 + s);
+                if(file1.exists() || file1.mkdir())
+                    return s1 + s + "/";
+            }
+            catch(Exception _ex) { }
+     
+        return null;
+ 
+    }
+
+    private static int getuid(String s)
+    {
+        try
+        {
+            File file = new File(s + "uid.dat");
+            if(!file.exists() || file.length() < 4L)
+            {
+                DataOutputStream dataoutputstream = new DataOutputStream(new FileOutputStream(s + "uid.dat"));
+                dataoutputstream.writeInt((int)(Math.random() * 99999999D));
+                dataoutputstream.close();
+            }
+        }
+        catch(Exception _ex) { }
+        try
+        {
+            DataInputStream datainputstream = new DataInputStream(new FileInputStream(s + "uid.dat"));
+            int i = datainputstream.readInt();
+            datainputstream.close();
+            return i + 1;
+        }
+        catch(Exception _ex)
+        {
+            return 0;
+        }
+    }
+
+    public static synchronized Socket opensocket(int i)
+        throws IOException
+    {
         for(socketreq = i; socketreq != 0;)
-            try {
+            try
+            {
                 Thread.sleep(50L);
-            } catch(Exception _ex) {
-			}
+            }
+            catch(Exception _ex) { }
+
         if(socket == null)
             throw new IOException("could not open socket");
         else
             return socket;
     }
 
-    public static synchronized DataInputStream openurl(String s) throws IOException {
+    public static synchronized DataInputStream openurl(String s)
+        throws IOException
+    {
         for(urlreq = s; urlreq != null;)
-            try {
+            try
+            {
                 Thread.sleep(50L);
             }
-            catch(Exception _ex) {
-			}
+            catch(Exception _ex) { }
+
         if(urlstream == null)
             throw new IOException("could not open: " + s);
         else
             return urlstream;
     }
 
-    public static synchronized void dnslookup(String s) {
+    public static synchronized void dnslookup(String s)
+    {
         dns = s;
         dnsreq = s;
     }
 
-    public static synchronized void startthread(Runnable runnable, int i) {
+    public static synchronized void startthread(Runnable runnable, int i)
+    {
         threadreqpri = i;
         threadreq = runnable;
     }
 
-    public static synchronized boolean wavesave(byte abyte0[], int i) {
+    public static synchronized boolean wavesave(byte abyte0[], int i)
+    {
         if(i > 0x1e8480)
             return false;
-        if(savereq != null) {
+        if(savereq != null)
+        {
             return false;
-        } else {
+        } else
+        {
             wavepos = (wavepos + 1) % 5;
             savelen = i;
             savebuf = abyte0;
@@ -213,10 +260,13 @@ public final class signlink implements Runnable {
         }
     }
 
-    public static synchronized boolean wavereplay() {
-        if(savereq != null) {
+    public static synchronized boolean wavereplay()
+    {
+        if(savereq != null)
+        {
             return false;
-        } else {
+        } else
+        {
             savebuf = null;
             waveplay = true;
             savereq = "sound" + wavepos + ".wav";
@@ -224,11 +274,14 @@ public final class signlink implements Runnable {
         }
     }
 
-    public static synchronized void midisave(byte abyte0[], int i) {
+    public static synchronized void midisave(byte abyte0[], int i)
+    {
         if(i > 0x1e8480)
             return;
-        if(savereq != null) {
-        } else {
+        if(savereq != null)
+        {
+        } else
+        {
             midipos = (midipos + 1) % 5;
             savelen = i;
             savebuf = abyte0;
@@ -237,12 +290,13 @@ public final class signlink implements Runnable {
         }
     }
 
-    public static void reporterror(String s) {
+    public static void reporterror(String s)
+    {
         System.out.println("Error: " + s);
     }
 
-    private signlink() {
-	
+    private signlink()
+    {
     }
 
     public static final int clientversion = 317;

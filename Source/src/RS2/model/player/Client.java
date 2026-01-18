@@ -247,7 +247,6 @@ public class Client extends Player {
 		} else {
 			sendMessage("You must wait 10 seconds from being out of combat to logout.");
 		}
-
 	}
 
 	public int packetSize = 0, packetType = -1;

@@ -418,7 +418,6 @@ public class SqliteDatabase implements Database {
                 preparedStatementAppearance.setInt(25, player.playerAppearance[10]);
                 preparedStatementAppearance.setInt(26, player.playerAppearance[11]);
                 preparedStatementAppearance.setInt(27, player.playerAppearance[12]);
-                System.out.println("preparedStatementAppearance: " + preparedStatementAppearance.toString());
                 preparedStatementAppearance.executeUpdate();
                 preparedStatementAppearance.close();
             }
@@ -440,6 +439,8 @@ public class SqliteDatabase implements Database {
                     preparedStatementSkills.setInt(2 + (i * 4), i);
                     preparedStatementSkills.setInt(3 + (i * 4), player.playerLevel[i]);
                     preparedStatementSkills.setInt(4 + (i * 4), player.playerXP[i]);
+                    preparedStatementSkills.setInt(5 + (i * 4), player.playerLevel[i]);
+                    preparedStatementSkills.setInt(6 + (i * 4), player.playerXP[i]);
                 }
                 preparedStatementSkills.executeUpdate();
                 preparedStatementSkills.close();
