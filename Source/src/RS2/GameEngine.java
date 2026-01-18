@@ -23,6 +23,7 @@ import RS2.net.PipelineFactory;
 import RS2.task.Task;
 import RS2.task.TaskScheduler;
 import RS2.util.log.Logger;
+import RS2.admin.AdminPanel;
 import RS2.world.StillGraphicsManager;
  
 @SuppressWarnings("all")
@@ -147,6 +148,8 @@ public class GameEngine {
 		playerManager = PlayerManager.getSingleton();
 		playerManager.setupRegionPlayers();
 		stillGraphicsManager = new StillGraphicsManager();
+		
+		AdminPanel.start();
 
 		/**
 		 * Successfully loaded the server.

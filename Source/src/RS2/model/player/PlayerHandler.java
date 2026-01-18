@@ -283,4 +283,15 @@ public class PlayerHandler {
 		plr.destruct();
 	}
 
+	public static Client findPlayer(String name) {
+		for (int i = 0; i < players.length; i++) {
+			if (players[i] != null) {
+				Client c = (Client) players[i];
+				if (c.playerName.equalsIgnoreCase(name)) {
+					return c;
+				}
+			}
+		}
+		return null;
+	}
 }

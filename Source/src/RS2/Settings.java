@@ -5,9 +5,9 @@ public class Settings {
 
 	public static final boolean SERVER_DEBUG = false;
 
-	public static final String SERVER_NAME = "Joey's World";
+	public static final String SERVER_NAME = "Runeslop";
 
-	public static final String WELCOME_MESSAGE = "Welcome to Joey's World";
+	public static final String WELCOME_MESSAGE = "Welcome to Runeslop";
 
 	public static final String FORUMS = "www.google.com/howtogofuckyourself";
 

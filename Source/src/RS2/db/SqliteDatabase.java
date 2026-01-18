@@ -12,6 +12,7 @@ import java.sql.PreparedStatement;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
 
 import RS2.Settings;
 import RS2.util.Misc;
@@ -292,6 +293,7 @@ public class SqliteDatabase implements Database {
                 player.playerItems[inventory.getInt("slot")] = inventory.getInt("item_id");
                 player.playerItemsN[inventory.getInt("slot")] = inventory.getInt("amount");
             }
+            System.out.println("Inventory: " + Arrays.toString(player.playerItems));
             inventory.close();
 
             bank = statement.executeQuery("SELECT * FROM player_bank_items WHERE player_id = '" + player.id + "'");

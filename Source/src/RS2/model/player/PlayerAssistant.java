@@ -620,6 +620,7 @@ public class PlayerAssistant{
 	* Objects, add and remove
 	**/
 	public void object(int objectId, int objectX, int objectY, int face, int objectType) {
+		// TODO: more robust object handling w/ concurrency control
 		//synchronized(c) {
 			if(c.getOutStream() != null && c != null) {
 				c.getOutStream().createFrame(85);
