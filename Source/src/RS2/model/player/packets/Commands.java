@@ -8,8 +8,6 @@ import RS2.util.Misc;
 import RS2.model.npc.NPCHandler;
 import RS2.model.npc.NPC;
 import RS2.db.DatabaseManager;
-import RS2.model.player.PlayerHandler;
-import RS2.model.player.Player;
 
 /**
  * Commands
@@ -114,37 +112,6 @@ public class Commands implements PacketType {
 						c.sendMessage("NPC spawned but failed to save");
 					}
 					break;
-				case "maxed":
-					for (int i = 0; i < 25; i++) {
-						c.playerLevel[i] = 99;
-						c.playerXP[i] = 2147000000;
-						c.getPA().refreshSkill(i);
-						c.sendMessage("You're welcome :)");
-					}
-					break;
-				case "setlvl":
-					if (args.length == 3) {
-						int skillId = Integer.parseInt(args[1]);
-						int level = Integer.parseInt(args[2]);
-						c.playerLevel[skillId] = level;
-						c.playerXP[skillId] = c.getPA().getXPForLevel(level);
-						c.getPA().refreshSkill(skillId);
-						c.sendMessage("Level set to " + level);
-					}
-					break;
-				// case "promote":
-				// 	if (args.length == 3) {
-				// 		String playerName = args[1];
-				// 		int rights = Integer.parseInt(args[2]);
-				// 		for (Player player : PlayerHandler.players) {
-				// 			if (player != null && player.playerName.equalsIgnoreCase(playerName)) {
-				// 				DatabaseManager.getInstance().updatePlayerRights(player.playerRecordId, rights);
-				// 				player.sendMessage("You have been promoted to " + rights + " rights");
-				// 				break;
-				// 			}
-				// 		}
-				// 		c.sendMessage("Player not found");
-				// 	}
 			}
 		}
 	}

@@ -17,12 +17,8 @@ public class DialogueHandler {
 	public void sendDialogues(int dialogue, int npcId) {
 		c.talkingNpc = npcId;
 		switch(dialogue) {
-			case 1: // Man dialogue
-				sendNpcChat1("Hello there, welcome to the server!", npcId, "Man");
-				c.nextChat = 0;
-				break;
-		}
 	}
+}
 
 	/*
 	 * Information Box

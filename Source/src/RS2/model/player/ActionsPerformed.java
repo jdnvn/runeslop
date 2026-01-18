@@ -36,15 +36,6 @@ public class ActionsPerformed {
 		c.clickNpcType = 0;
 		c.npcClickIndex = 0;
 		switch (npcType) {
-			case 1: // Man
-				c.getDH().sendDialogues(1, npcType);
-				break;
-			case 41: // Chicken  
-				c.sendMessage("The chicken doesn't want to talk.");
-				break;
-			default:
-				c.sendMessage("Nothing interesting happens.");
-				break;
 		}
 	}
 
