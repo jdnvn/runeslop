@@ -22,14 +22,10 @@ public class SqliteDatabase implements Database {
     private Connection conn;
 
     SqliteDatabase() {
-        System.out.println("SqliteDatabase: Initializing...");
         try {
             Class.forName("org.sqlite.JDBC");
-            System.out.println("SqliteDatabase: JDBC driver loaded");
             connect();
-            System.out.println("SqliteDatabase: Connected, creating tables...");
             createTables();
-            System.out.println("SqliteDatabase: Tables created, loading NPCs from config...");
             loadNPCsFromConfig();
             Misc.println("SQLite database initialized");
         } catch (ClassNotFoundException e) {
@@ -373,7 +369,7 @@ public class SqliteDatabase implements Database {
                         sqlEquipment += ", ";
                     }
                 }
-                sqlEquipment += " ON CONFLICT(player_id, slot) DO UPDATE SET item_id = ?, amount = ?";
+                sqlEquipment += " ON CONFLICT(player_id, slot) DO UPDATE SET item_id = excluded.item_id, amount = excluded.amount";
                 PreparedStatement preparedStatementEquipment = conn.prepareStatement(sqlEquipment);
 
                 for (int i = 0; i < player.playerEquipment.length; i++) {
@@ -418,7 +414,6 @@ public class SqliteDatabase implements Database {
                 preparedStatementAppearance.setInt(25, player.playerAppearance[10]);
                 preparedStatementAppearance.setInt(26, player.playerAppearance[11]);
                 preparedStatementAppearance.setInt(27, player.playerAppearance[12]);
-                System.out.println("preparedStatementAppearance: " + preparedStatementAppearance.toString());
                 preparedStatementAppearance.executeUpdate();
                 preparedStatementAppearance.close();
             }
@@ -432,7 +427,7 @@ public class SqliteDatabase implements Database {
                     }
                 }
 
-                sqlSkills += " ON CONFLICT(player_id, skill_id) DO UPDATE SET level = ?, xp = ?";
+                sqlSkills += " ON CONFLICT(player_id, skill_id) DO UPDATE SET level = excluded.level, xp = excluded.xp";
                 PreparedStatement preparedStatementSkills = conn.prepareStatement(sqlSkills);
 
                 for (int i = 0; i < player.playerLevel.length; i++) {
@@ -454,7 +449,7 @@ public class SqliteDatabase implements Database {
                     }
                 }
 
-                sqlInventory += " ON CONFLICT(player_id, slot) DO UPDATE SET item_id = ?, amount = ?";
+                sqlInventory += " ON CONFLICT(player_id, slot) DO UPDATE SET item_id = excluded.item_id, amount = excluded.amount";
                 PreparedStatement preparedStatementInventory = conn.prepareStatement(sqlInventory);
 
                 for (int i = 0; i < player.playerItems.length; i++) {
@@ -476,7 +471,7 @@ public class SqliteDatabase implements Database {
                     }
                 }
 
-                sqlBank += " ON CONFLICT(player_id, slot) DO UPDATE SET item_id = ?, amount = ?";
+                sqlBank += " ON CONFLICT(player_id, slot) DO UPDATE SET item_id = excluded.item_id, amount = excluded.amount";
                 PreparedStatement preparedStatementBank = conn.prepareStatement(sqlBank);
 
                 for (int i = 0; i < player.bankItems.length; i++) {
@@ -611,7 +606,6 @@ public class SqliteDatabase implements Database {
             preparedStatement.setInt(7, npc.attack);
             preparedStatement.setInt(8, npc.defence);
             preparedStatement.setString(9, npc.description);
-            System.out.println("saveSpawnedNPC preparedStatement: " + preparedStatement.toString());
             preparedStatement.executeUpdate();
             preparedStatement.close();
         } catch (SQLException e) {
