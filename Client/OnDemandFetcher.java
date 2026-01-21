@@ -4,6 +4,8 @@
 
 import java.io.*;
 import java.net.Socket;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.zip.CRC32;
 import java.util.zip.GZIPInputStream;
 import sign.signlink;
@@ -11,6 +13,8 @@ import sign.signlink;
 public final class OnDemandFetcher extends OnDemandFetcherParent
 		implements Runnable
 {
+	// Track invalid model IDs we've already warned about to avoid spam
+	private static Set<String> warnedInvalidIds = new HashSet<>();
 
 	public void crcPack(int index, int index_length) {
 		try {
@@ -309,6 +313,15 @@ public final class OnDemandFetcher extends OnDemandFetcherParent
 
 	public void method558(int i, int j)
 	{
+		// Bounds check - prevent requesting IDs that don't exist in version files
+		if(i < 0 || i >= crcs.length || j < 0 || j >= crcs[i].length) {
+			String key = i + ":" + j;
+			if(!warnedInvalidIds.contains(key)) {
+				warnedInvalidIds.add(key);
+				System.err.println("Warning: Skipping invalid model/data request - type: " + i + ", id: " + j + " (max: " + (i >= 0 && i < crcs.length ? crcs[i].length : "N/A") + ")");
+			}
+			return;
+		}
 		synchronized(nodeSubList)
 		{
 			for(OnDemandData onDemandData = (OnDemandData) nodeSubList.reverseGetFirst(); onDemandData != null; onDemandData = (OnDemandData) nodeSubList.reverseGetNext())
@@ -585,6 +598,15 @@ public final class OnDemandFetcher extends OnDemandFetcherParent
 		{
 			waiting = true;
 			byte abyte0[] = null;
+			// Bounds check before accessing crcs array
+			if(onDemandData.dataType < 0 || onDemandData.dataType >= crcs.length || 
+			   onDemandData.ID < 0 || onDemandData.ID >= crcs[onDemandData.dataType].length) {
+				synchronized(aClass19_1370)
+				{
+					onDemandData = (OnDemandData)aClass19_1370.popHead();
+				}
+				continue;
+			}
 			if(clientInstance.decompressors[0] != null) {
 				abyte0 = clientInstance.decompressors[onDemandData.dataType + 1].decompress(onDemandData.ID);
 			}

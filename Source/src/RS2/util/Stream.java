@@ -15,26 +15,50 @@ public class Stream {
 	}
 
 	public byte readSignedByteA() {
+		if (currentOffset >= buffer.length) {
+			System.err.println("Warning: readSignedByteA() - buffer overflow. Buffer length: " + buffer.length + ", offset: " + currentOffset);
+			return 0;
+		}
 		return (byte) (buffer[currentOffset++] - 128);
 	}
 
 	public byte readSignedByteC() {
+		if (currentOffset >= buffer.length) {
+			System.err.println("Warning: readSignedByteC() - buffer overflow. Buffer length: " + buffer.length + ", offset: " + currentOffset);
+			return 0;
+		}
 		return (byte) (-buffer[currentOffset++]);
 	}
 
 	public byte readSignedByteS() {
+		if (currentOffset >= buffer.length) {
+			System.err.println("Warning: readSignedByteS() - buffer overflow. Buffer length: " + buffer.length + ", offset: " + currentOffset);
+			return 0;
+		}
 		return (byte) (128 - buffer[currentOffset++]);
 	}
 
 	public int readUnsignedByteA() {
+		if (currentOffset >= buffer.length) {
+			System.err.println("Warning: readUnsignedByteA() - buffer overflow. Buffer length: " + buffer.length + ", offset: " + currentOffset);
+			return 0;
+		}
 		return buffer[currentOffset++] - 128 & 0xff;
 	}
 
 	public int readUnsignedByteC() {
+		if (currentOffset >= buffer.length) {
+			System.err.println("Warning: readUnsignedByteC() - buffer overflow. Buffer length: " + buffer.length + ", offset: " + currentOffset);
+			return 0;
+		}
 		return -buffer[currentOffset++] & 0xff;
 	}
 
 	public int readUnsignedByteS() {
+		if (currentOffset >= buffer.length) {
+			System.err.println("Warning: readUnsignedByteS() - buffer overflow. Buffer length: " + buffer.length + ", offset: " + currentOffset);
+			return 0;
+		}
 		return 128 - buffer[currentOffset++] & 0xff;
 	}
 
@@ -54,6 +78,11 @@ public class Stream {
 	}
 
 	public int readSignedWordBigEndian() {
+		if (currentOffset + 2 > buffer.length) {
+			System.err.println("Warning: readSignedWordBigEndian() - not enough bytes in buffer. Buffer length: " + buffer.length + ", attempted offset: " + (currentOffset + 2));
+			currentOffset = buffer.length;
+			return 0;
+		}
 		currentOffset += 2;
 		int i = ((buffer[currentOffset - 1] & 0xff) << 8) + (buffer[currentOffset - 2] & 0xff);
 		if (i > 32767)
@@ -62,6 +91,11 @@ public class Stream {
 	}
 
 	public int readSignedWordA() {
+		if (currentOffset + 2 > buffer.length) {
+			System.err.println("Warning: readSignedWordA() - not enough bytes in buffer. Buffer length: " + buffer.length + ", attempted offset: " + (currentOffset + 2));
+			currentOffset = buffer.length;
+			return 0;
+		}
 		currentOffset += 2;
 		int i = ((buffer[currentOffset - 2] & 0xff) << 8) + (buffer[currentOffset - 1] - 128 & 0xff);
 		if (i > 32767)
@@ -70,6 +104,11 @@ public class Stream {
 	}
 
 	public int readSignedWordBigEndianA() {
+		if (currentOffset + 2 > buffer.length) {
+			System.err.println("Warning: readSignedWordBigEndianA() - not enough bytes in buffer. Buffer length: " + buffer.length + ", attempted offset: " + (currentOffset + 2));
+			currentOffset = buffer.length;
+			return 0;
+		}
 		currentOffset += 2;
 		int i = ((buffer[currentOffset - 1] & 0xff) << 8) + (buffer[currentOffset - 2] - 128 & 0xff);
 		if (i > 32767)
@@ -78,16 +117,31 @@ public class Stream {
 	}
 
 	public int readUnsignedWordBigEndian() {
+		if (currentOffset + 2 > buffer.length) {
+			System.err.println("Warning: readUnsignedWordBigEndian() - not enough bytes in buffer. Buffer length: " + buffer.length + ", attempted offset: " + (currentOffset + 2));
+			currentOffset = buffer.length;
+			return 0;
+		}
 		currentOffset += 2;
 		return ((buffer[currentOffset - 1] & 0xff) << 8) + (buffer[currentOffset - 2] & 0xff);
 	}
 
 	public int readUnsignedWordA() {
+		if (currentOffset + 2 > buffer.length) {
+			System.err.println("Warning: readUnsignedWordA() - not enough bytes in buffer. Buffer length: " + buffer.length + ", attempted offset: " + (currentOffset + 2));
+			currentOffset = buffer.length;
+			return 0;
+		}
 		currentOffset += 2;
 		return ((buffer[currentOffset - 2] & 0xff) << 8) + (buffer[currentOffset - 1] - 128 & 0xff);
 	}
 
 	public int readUnsignedWordBigEndianA() {
+		if (currentOffset + 2 > buffer.length) {
+			System.err.println("Warning: readUnsignedWordBigEndianA() - not enough bytes in buffer. Buffer length: " + buffer.length + ", attempted offset: " + (currentOffset + 2));
+			currentOffset = buffer.length;
+			return 0;
+		}
 		currentOffset += 2;
 		return ((buffer[currentOffset - 1] & 0xff) << 8) + (buffer[currentOffset - 2] - 128 & 0xff);
 	}
@@ -111,12 +165,22 @@ public class Stream {
 	}
 
 	public int readDWord_v1() {
+		if (currentOffset + 4 > buffer.length) {
+			System.err.println("Warning: readDWord_v1() - not enough bytes in buffer. Buffer length: " + buffer.length + ", attempted offset: " + (currentOffset + 4));
+			currentOffset = buffer.length;
+			return 0;
+		}
 		currentOffset += 4;
 		return ((buffer[currentOffset - 2] & 0xff) << 24) + ((buffer[currentOffset - 1] & 0xff) << 16) + ((buffer[currentOffset - 4] & 0xff) << 8)
 				+ (buffer[currentOffset - 3] & 0xff);
 	}
 
 	public int readDWord_v2() {
+		if (currentOffset + 4 > buffer.length) {
+			System.err.println("Warning: readDWord_v2() - not enough bytes in buffer. Buffer length: " + buffer.length + ", attempted offset: " + (currentOffset + 4));
+			currentOffset = buffer.length;
+			return 0;
+		}
 		currentOffset += 4;
 		return ((buffer[currentOffset - 3] & 0xff) << 24) + ((buffer[currentOffset - 4] & 0xff) << 16) + ((buffer[currentOffset - 1] & 0xff) << 8)
 				+ (buffer[currentOffset - 2] & 0xff);
@@ -139,6 +203,10 @@ public class Stream {
 	}
 
 	public void readBytes_reverse(byte abyte0[], int i, int j) {
+		if (currentOffset + i > buffer.length) {
+			System.err.println("Warning: readBytes_reverse() - not enough bytes in buffer. Buffer length: " + buffer.length + ", attempted to read: " + i + " bytes from offset: " + currentOffset);
+			return;
+		}
 		for (int k = (j + i) - 1; k >= j; k--)
 			abyte0[k] = buffer[currentOffset++];
 
@@ -152,7 +220,10 @@ public class Stream {
 	}
 
 	public void readBytes_reverseA(byte abyte0[], int i, int j) {
-		ensureCapacity(i);
+		if (currentOffset + i > buffer.length) {
+			System.err.println("Warning: readBytes_reverseA() - not enough bytes in buffer. Buffer length: " + buffer.length + ", attempted to read: " + i + " bytes from offset: " + currentOffset);
+			return;
+		}
 		for (int k = (j + i) - 1; k >= j; k--)
 			abyte0[k] = (byte) (buffer[currentOffset++] - 128);
 
@@ -283,19 +354,37 @@ public class Stream {
 	}
 
 	public int readUnsignedByte() {
+		if (currentOffset >= buffer.length) {
+			System.err.println("Warning: readUnsignedByte() - buffer overflow. Buffer length: " + buffer.length + ", offset: " + currentOffset);
+			return 0;
+		}
 		return buffer[currentOffset++] & 0xff;
 	}
 
 	public byte readSignedByte() {
+		if (currentOffset >= buffer.length) {
+			System.err.println("Warning: readSignedByte() - buffer overflow. Buffer length: " + buffer.length + ", offset: " + currentOffset);
+			return 0;
+		}
 		return buffer[currentOffset++];
 	}
 
 	public int readUnsignedWord() {
+		if (currentOffset + 2 > buffer.length) {
+			System.err.println("Warning: readUnsignedWord() - not enough bytes in buffer. Buffer length: " + buffer.length + ", attempted offset: " + (currentOffset + 2));
+			currentOffset = buffer.length;
+			return 0;
+		}
 		currentOffset += 2;
 		return ((buffer[currentOffset - 2] & 0xff) << 8) + (buffer[currentOffset - 1] & 0xff);
 	}
 
 	public int readSignedWord() {
+		if (currentOffset + 2 > buffer.length) {
+			System.err.println("Warning: readSignedWord() - not enough bytes in buffer. Buffer length: " + buffer.length + ", attempted offset: " + (currentOffset + 2));
+			currentOffset = buffer.length;
+			return 0;
+		}
 		currentOffset += 2;
 		int i = ((buffer[currentOffset - 2] & 0xff) << 8) + (buffer[currentOffset - 1] & 0xff);
 		if (i > 32767)
@@ -304,6 +393,11 @@ public class Stream {
 	}
 
 	public int readDWord() {
+		if (currentOffset + 4 > buffer.length) {
+			System.err.println("Warning: readDWord() - not enough bytes in buffer. Buffer length: " + buffer.length + ", attempted offset: " + (currentOffset + 4));
+			currentOffset = buffer.length;
+			return 0;
+		}
 		currentOffset += 4;
 		return ((buffer[currentOffset - 4] & 0xff) << 24) + ((buffer[currentOffset - 3] & 0xff) << 16) + ((buffer[currentOffset - 2] & 0xff) << 8)
 				+ (buffer[currentOffset - 1] & 0xff);
@@ -317,12 +411,20 @@ public class Stream {
 
 	public java.lang.String readString() {
 		int i = currentOffset;
-		while (buffer[currentOffset++] != 10)
+		while (currentOffset < buffer.length && buffer[currentOffset++] != 10)
 			;
+		if (currentOffset > buffer.length) {
+			System.err.println("Warning: readString() - reached end of buffer without finding terminator");
+			return "";
+		}
 		return new String(buffer, i, currentOffset - i - 1);
 	}
 
 	public void readBytes(byte abyte0[], int i, int j) {
+		if (currentOffset + i > buffer.length) {
+			System.err.println("Warning: readBytes() - not enough bytes in buffer. Buffer length: " + buffer.length + ", attempted to read: " + i + " bytes from offset: " + currentOffset);
+			return;
+		}
 		for (int k = j; k < j + i; k++)
 			abyte0[k] = buffer[currentOffset++];
 

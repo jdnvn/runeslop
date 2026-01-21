@@ -191,6 +191,88 @@ public class client extends RSApplet {
 		smallText.method382(textColor[tradeMode], 362, text[tradeMode], 163, true);
 	}
 
+	/**
+	 * Finds the last color code in a string (e.g., @cya@, @gre@, @red@)
+	 * @param text The text to search
+	 * @return The last color code found, or empty string if none
+	 */
+	private String findLastColorCode(String text) {
+		String lastColor = "";
+		int idx = 0;
+		while (idx < text.length()) {
+			if (text.charAt(idx) == '@' && idx + 4 < text.length() && text.charAt(idx + 4) == '@') {
+				lastColor = text.substring(idx, idx + 5);
+				idx += 5;
+			} else {
+				idx++;
+			}
+		}
+		return lastColor;
+	}
+
+	/**
+	 * Wraps text to fit within a specified pixel width.
+	 * @param text The text to wrap
+	 * @param maxWidth Maximum width in pixels
+	 * @param font The font to use for measuring text width
+	 * @return Array of wrapped lines
+	 */
+	private String[] wrapText(String text, int maxWidth, TextDrawingArea font) {
+		if (text == null || text.isEmpty()) {
+			return new String[] { "" };
+		}
+		
+		java.util.ArrayList<String> lines = new java.util.ArrayList<>();
+		
+		// Track the last active color code to carry forward to new lines
+		String currentColor = "";
+		StringBuilder currentLine = new StringBuilder();
+		String[] words = text.split(" ");
+		
+		for (int i = 0; i < words.length; i++) {
+			String word = words[i];
+			String testLine = currentLine.length() == 0 ? word : currentLine + " " + word;
+			
+			if (font.getTextWidth(testLine) <= maxWidth) {
+				if (currentLine.length() > 0) {
+					currentLine.append(" ");
+				}
+				currentLine.append(word);
+			} else {
+				// Line is too long, start a new line
+				if (currentLine.length() > 0) {
+					lines.add(currentLine.toString());
+					
+					// Find the last color code used in this line to carry forward
+					String lineColor = findLastColorCode(currentLine.toString());
+					if (!lineColor.isEmpty()) {
+						currentColor = lineColor;
+					}
+					
+					currentLine = new StringBuilder();
+					// Prepend the active color to the new line
+					if (!currentColor.isEmpty()) {
+						currentLine.append(currentColor);
+					}
+				}
+				
+				// If single word is too long, just add it (will be clipped)
+				if (currentLine.length() == 0 && font.getTextWidth(word) > maxWidth) {
+					lines.add(word);
+				} else {
+					currentLine.append(word);
+				}
+			}
+		}
+		
+		// Add the last line
+		if (currentLine.length() > 0) {
+			lines.add(currentLine.toString());
+		}
+		
+		return lines.toArray(new String[0]);
+	}
+
 	private void drawChatArea() {
 		aRSImageProducer_1166.initDrawingArea();
 		Texture.anIntArray1472 = anIntArray1180;
@@ -235,56 +317,108 @@ public class client extends RSApplet {
 				}
 				if(chatType == 0) {
 					if (chatTypeView == 5 || chatTypeView == 0) {
-					if(yPos > 0 && yPos < 210)
-						textDrawingArea.method389(false, 11, 0, chatMessages[k], yPos);//chat color enabled
-					j++;
-					j77++;
+						// Wrap server/system messages
+						String[] wrappedLines = wrapText(chatMessages[k], 480, textDrawingArea);
+						// Draw in reverse order (last line first, since chat draws bottom-to-top)
+						for (int lineIdx = wrappedLines.length - 1; lineIdx >= 0; lineIdx--) {
+							int lineYPos = (70 - j77 * 14) + anInt1089 + 5;
+							if(lineYPos > 0 && lineYPos < 210)
+								textDrawingArea.method389(false, 11, 0, wrappedLines[lineIdx], lineYPos);
+							j++;
+							j77++;
+						}
 					}
 				}
 				if((chatType == 1 || chatType == 2) && (chatType == 1 || publicChatMode == 0 || publicChatMode == 1 && isFriendOrSelf(s1))) {
 					if (chatTypeView == 1 || chatTypeView == 0) {
-						if(yPos > 0 && yPos < 210) {
-							int xPos = 11;
-							if(byte0 == 1) {
-								modIcons[0].drawBackground(xPos + 1, yPos - 12);
-								xPos += 14;
-							} else if(byte0 == 2) {
-								modIcons[1].drawBackground(xPos + 1, yPos - 12);
-								xPos += 14;
-							} else if(byte0 == 3) {
-								modIcons[2].drawBackground(xPos + 1, yPos - 12);
-								xPos += 14;
-							}
-							textDrawingArea.method385(0, s1 + ":", yPos, xPos);
-							xPos += textDrawingArea.getTextWidth(s1) + 8;
-							textDrawingArea.method389(false, xPos, 255, chatMessages[k], yPos);
+						int xPos = 11;
+						if(byte0 == 1) {
+							xPos += 14;
+						} else if(byte0 == 2) {
+							xPos += 14;
+						} else if(byte0 == 3) {
+							xPos += 14;
 						}
-						j++;
-						j77++;
+						int nameWidth = textDrawingArea.getTextWidth(s1 + ": ");
+						int messageStartX = xPos + nameWidth;
+						int availableWidth = 490 - messageStartX;
+						
+						// Wrap the message text
+						String[] wrappedLines = wrapText(chatMessages[k], availableWidth, textDrawingArea);
+						
+						// Draw in reverse order (last line first, since chat draws bottom-to-top)
+						for (int lineIdx = wrappedLines.length - 1; lineIdx >= 0; lineIdx--) {
+							int lineYPos = (70 - j77 * 14) + anInt1089 + 5;
+							if(lineYPos > 0 && lineYPos < 210) {
+								if (lineIdx == 0) {
+									// First line: draw mod icon and name
+									int drawX = 11;
+									if(byte0 == 1) {
+										modIcons[0].drawBackground(drawX + 1, lineYPos - 12);
+										drawX += 14;
+									} else if(byte0 == 2) {
+										modIcons[1].drawBackground(drawX + 1, lineYPos - 12);
+										drawX += 14;
+									} else if(byte0 == 3) {
+										modIcons[2].drawBackground(drawX + 1, lineYPos - 12);
+										drawX += 14;
+									}
+									textDrawingArea.method385(0, s1 + ":", lineYPos, drawX);
+									textDrawingArea.method389(false, messageStartX, 255, wrappedLines[lineIdx], lineYPos);
+								} else {
+									// Continuation lines: indent to align with message
+									textDrawingArea.method389(false, messageStartX, 255, wrappedLines[lineIdx], lineYPos);
+								}
+							}
+							j++;
+							j77++;
+						}
 					}
 				}
 				if((chatType == 3 || chatType == 7) && (splitPrivateChat == 0 || chatTypeView == 2) && (chatType == 7 || privateChatMode == 0 || privateChatMode == 1 && isFriendOrSelf(s1))) {
 					if (chatTypeView == 2 || chatTypeView == 0) {
-						if(yPos > 0 && yPos < 210) {
-							int k1 = 11;
-							textDrawingArea.method385(0, "From", yPos, k1);
-							k1 += textDrawingArea.getTextWidth("From ");
-							if(byte0 == 1) {
-								modIcons[0].drawBackground(k1, yPos - 12);
-								k1 += 12;
-							} else if(byte0 == 2) {
-								modIcons[1].drawBackground(k1, yPos - 12);
-								k1 += 12;
-							} else if(byte0 == 3) {
-								modIcons[2].drawBackground(k1, yPos - 12);
-								k1 += 12;
-							}
-							textDrawingArea.method385(0, s1 + ":", yPos, k1);
-							k1 += textDrawingArea.getTextWidth(s1) + 8;
-							textDrawingArea.method385(0x800000, chatMessages[k], yPos, k1);
+						// Calculate prefix width for "From [icon] name: "
+						int prefixWidth = 11;
+						prefixWidth += textDrawingArea.getTextWidth("From ");
+						if(byte0 >= 1 && byte0 <= 3) {
+							prefixWidth += 12;
 						}
-						j++;
-						j77++;
+						prefixWidth += textDrawingArea.getTextWidth(s1 + ": ");
+						int availableWidth = 490 - prefixWidth;
+						
+						// Wrap the message text
+						String[] wrappedLines = wrapText(chatMessages[k], availableWidth, textDrawingArea);
+						
+						// Draw in reverse order (last line first, since chat draws bottom-to-top)
+						for (int lineIdx = wrappedLines.length - 1; lineIdx >= 0; lineIdx--) {
+							int lineYPos = (70 - j77 * 14) + anInt1089 + 5;
+							if(lineYPos > 0 && lineYPos < 210) {
+								if (lineIdx == 0) {
+									// First line: draw "From [icon] name:" prefix
+									int k1 = 11;
+									textDrawingArea.method385(0, "From", lineYPos, k1);
+									k1 += textDrawingArea.getTextWidth("From ");
+									if(byte0 == 1) {
+										modIcons[0].drawBackground(k1, lineYPos - 12);
+										k1 += 12;
+									} else if(byte0 == 2) {
+										modIcons[1].drawBackground(k1, lineYPos - 12);
+										k1 += 12;
+									} else if(byte0 == 3) {
+										modIcons[2].drawBackground(k1, lineYPos - 12);
+										k1 += 12;
+									}
+									textDrawingArea.method385(0, s1 + ":", lineYPos, k1);
+									k1 += textDrawingArea.getTextWidth(s1) + 8;
+									textDrawingArea.method385(0x800000, wrappedLines[lineIdx], lineYPos, k1);
+								} else {
+									// Continuation lines: indent to align with message
+									textDrawingArea.method385(0x800000, wrappedLines[lineIdx], lineYPos, prefixWidth);
+								}
+							}
+							j++;
+							j77++;
+						}
 					}
 				}
 				if(chatType == 4 && (tradeMode == 0 || tradeMode == 1 && isFriendOrSelf(s1))) {
@@ -305,12 +439,30 @@ public class client extends RSApplet {
 				}
 				if(chatType == 6 && (splitPrivateChat == 0 || chatTypeView == 2) && privateChatMode < 2) {
 					if (chatTypeView == 2 || chatTypeView == 0) {
-						if(yPos > 0 && yPos < 210) {
-							textDrawingArea.method385(0, "To " + s1 + ":", yPos, 11);
-							textDrawingArea.method385(0x800000, chatMessages[k], yPos, 15 + textDrawingArea.getTextWidth("To :" + s1));
+						// Calculate prefix width for "To name: "
+						String prefix = "To " + s1 + ": ";
+						int prefixWidth = 11 + textDrawingArea.getTextWidth(prefix);
+						int availableWidth = 490 - prefixWidth;
+						
+						// Wrap the message text
+						String[] wrappedLines = wrapText(chatMessages[k], availableWidth, textDrawingArea);
+						
+						// Draw in reverse order (last line first, since chat draws bottom-to-top)
+						for (int lineIdx = wrappedLines.length - 1; lineIdx >= 0; lineIdx--) {
+							int lineYPos = (70 - j77 * 14) + anInt1089 + 5;
+							if(lineYPos > 0 && lineYPos < 210) {
+								if (lineIdx == 0) {
+									// First line: draw "To name:" prefix
+									textDrawingArea.method385(0, "To " + s1 + ":", lineYPos, 11);
+									textDrawingArea.method385(0x800000, wrappedLines[lineIdx], lineYPos, prefixWidth);
+								} else {
+									// Continuation lines: indent to align with message
+									textDrawingArea.method385(0x800000, wrappedLines[lineIdx], lineYPos, prefixWidth);
+								}
+							}
+							j++;
+							j77++;
 						}
-					j++;
-					j77++;
 					}
 				}
 				if(chatType == 8 && (tradeMode == 0 || tradeMode == 1 && isFriendOrSelf(s1))) {

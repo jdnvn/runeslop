@@ -9,6 +9,7 @@ import RS2.model.player.Player;
 import RS2.model.player.PlayerHandler;
 import RS2.tick.Tick;
 import RS2.util.Misc;
+import RS2.admin.AdminPanel;
 
 /**
  * Clicking most buttons
@@ -52,23 +53,47 @@ public class ClickingButtons implements PacketType {
 				}	
 			break;
 			/**
-			 * Clicking Options
-			 * 9178 - 9181
+			 * Dialogue Options - notify agent if dialogueOptions is set
 			 */
+			// 2 options (interface 2459)
+			case 9167:
+				handleDialogueOption(c, 0);
+			break;
+			case 9168:
+				handleDialogueOption(c, 1);
+			break;
+			
+			// 3 options (interface 2469)
 			case 9178:
-			
+				handleDialogueOption(c, 0);
 			break;
-			
 			case 9179:
-				
+				handleDialogueOption(c, 1);
 			break;
-			
 			case 9180:
-				
+				handleDialogueOption(c, 2);
 			break;
 			
+			// 4 options (interface 2480)
 			case 9181:
-				
+				handleDialogueOption(c, 3);
+			break;
+			
+			// 5 options (interface 2492)
+			case 9190:
+				handleDialogueOption(c, 0);
+			break;
+			case 9191:
+				handleDialogueOption(c, 1);
+			break;
+			case 9192:
+				handleDialogueOption(c, 2);
+			break;
+			case 9193:
+				handleDialogueOption(c, 3);
+			break;
+			case 9194:
+				handleDialogueOption(c, 4);
 			break;
 			
 			/**Dueling**/			
@@ -481,5 +506,14 @@ public class ClickingButtons implements PacketType {
 		}
 		if (c.isAutoButton(actionButtonId))
 			c.assignAutocast(actionButtonId);
+	}
+	
+	private static void handleDialogueOption(Client c, int optionIndex) {
+		if (c.dialogueOptions != null && optionIndex < c.dialogueOptions.length) {
+			String selectedOption = c.dialogueOptions[optionIndex];
+			AdminPanel.onDialogueOption(c.playerName, optionIndex, selectedOption);
+			c.dialogueOptions = null; // Clear after selection
+		}
+		c.getPA().closeAllWindows();
 	}
 }

@@ -12,5 +12,7 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="deps/mina.jar"/>
 	<classpathentry kind="lib" path="deps/netty.jar"/>
+	<classpathentry kind="lib" path="deps/Java-WebSocket-1.5.4.jar"/>
+	<classpathentry kind="lib" path="deps/sqlite-jdbc-3.51.1.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

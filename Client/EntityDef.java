@@ -607,6 +607,8 @@ public final class EntityDef {
 		stream = null;
 	}
 
+	private static java.util.Set<Long> warnedNpcModels = new java.util.HashSet<>();
+	
 	public Model method164(int j, int k, int ai[])
 	{
 		if(childrenIDs != null)
@@ -621,9 +623,16 @@ public final class EntityDef {
 		if(model == null)
 		{
 			boolean flag = false;
-			for(int i1 = 0; i1 < models.length; i1++)
-				if(!Model.method463(models[i1]))
+			for(int i1 = 0; i1 < models.length; i1++) {
+				if(!Model.method463(models[i1])) {
 					flag = true;
+					// Debug: Log which NPC is using invalid models (only once per NPC)
+					if(!warnedNpcModels.contains(type)) {
+						warnedNpcModels.add(type);
+						System.err.println("NPC ID " + type + " (" + name + ") uses invalid model ID: " + models[i1]);
+					}
+				}
+			}
 
 			if(flag)
 				return null;

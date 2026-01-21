@@ -31,7 +31,6 @@ public abstract class Command {
             return (ServerCommand) REGISTRY.get(name);
         } catch (ClassCastException e) {
             System.out.println("Command " + name + " is not a ServerCommand");
-            e.printStackTrace();
             return null;
         }
     }

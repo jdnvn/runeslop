@@ -25,6 +25,8 @@ import RS2.task.TaskScheduler;
 import RS2.util.log.Logger;
 import RS2.admin.AdminPanel;
 import RS2.world.StillGraphicsManager;
+
+import java.util.concurrent.ConcurrentLinkedQueue;
  
 @SuppressWarnings("all")
 public class GameEngine {
@@ -118,6 +120,8 @@ public class GameEngine {
 		return scheduler;
 	}
 
+	public static ConcurrentLinkedQueue<Runnable> pendingActions = new ConcurrentLinkedQueue<>();
+
 	static {
 		serverlistenerPort = 43594;
 		cycleRate = 600;
@@ -163,14 +167,23 @@ public class GameEngine {
 		 */
 		scheduler.schedule(new Task() {
 			@Override
-                    protected void execute() {
-                        itemHandler.process();
-                        playerHandler.process();	
-                        npcHandler.process();
-                        shopHandler.process();
-                        objectManager.process();
-                        }
-                });
+			protected void execute() {
+
+				while (!pendingActions.isEmpty()) {
+					try {
+						pendingActions.poll().run();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+
+				itemHandler.process();
+				playerHandler.process();	
+				npcHandler.process();
+				shopHandler.process();
+				objectManager.process();
+			}
+		});
 	}
 	private Player p;
 	/**

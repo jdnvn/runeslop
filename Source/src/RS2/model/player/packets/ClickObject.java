@@ -1,5 +1,6 @@
 package RS2.model.player.packets;
 
+import RS2.admin.AdminPanel;
 import RS2.model.player.Client;
 import RS2.model.player.PacketType;
 import RS2.util.Misc;
@@ -17,6 +18,7 @@ public class ClickObject implements PacketType {
 		c.clickObjectType = c.objectX = c.objectId = c.objectY = 0;
 		c.objectYOffset = c.objectXOffset = 0;
 		c.getPA().resetFollow();
+		AdminPanel.pushAgentEvent("object_click", "{\"player\":\"" + c.playerName + "\",\"object_id\":" + c.objectId + "}");
 		switch (packetType) {
 
 		case FIRST_CLICK:

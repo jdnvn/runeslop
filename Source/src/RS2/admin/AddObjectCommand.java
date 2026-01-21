@@ -1,6 +1,8 @@
 package RS2.admin;
 
+import RS2.GameEngine;
 import RS2.model.player.Client;
+import java.util.Arrays;
 
 // TODO: this is broken, need to make object creation thread safe
 public class AddObjectCommand extends ServerCommand {
@@ -11,7 +13,7 @@ public class AddObjectCommand extends ServerCommand {
     @Override
     public String execute(Client c, String[] args) {
         if (args.length < 1) {
-            return "Usage: '/objadd obj_id' or '/objadd obj_id x y height face'\nFace: 0=North, 1=East, 2=South, 3=West";
+            return "Usage: '/objadd obj_id' or '/objadd obj_id x y height face' | Face: 0=North, 1=East, 2=South, 3=West";
         }
         
         int objId = Integer.parseInt(args[0]);
@@ -40,13 +42,15 @@ public class AddObjectCommand extends ServerCommand {
 
     public String serverExecute(String[] args) {
         if (args.length < 4) {
-            return "Usage: '/objadd obj_id x y face'\nFace: 0=North, 1=East, 2=South, 3=West";
+            return "Usage: '/objadd obj_id x y face' | Face: 0=North, 1=East, 2=South, 3=West";
         }
         int objId = Integer.parseInt(args[0]);
         int objX = Integer.parseInt(args[1]);
         int objY = Integer.parseInt(args[2]);
         int objFace = Integer.parseInt(args[3]);
-        new RS2.model.object.Object(objId, objX, objY, 0, objFace, 10, 0, 0, 0, 0, 0);
+        GameEngine.pendingActions.add(() -> {
+            new RS2.model.object.Object(objId, objX, objY, 0, objFace, 10, 0, 0, 0, 0, 0);
+        });
         return "Object " + objId + " spawned at (" + objX + ", " + objY + ") face=" + objFace;
     }
 }

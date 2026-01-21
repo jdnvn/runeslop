@@ -1,5 +1,6 @@
 package RS2.model.player.packets;
 
+import RS2.admin.AdminPanel;
 import RS2.model.player.Client;
 import RS2.model.player.PacketType;
 
@@ -17,5 +18,6 @@ public class ClickItem implements PacketType {
 		if (itemId != c.playerItems[itemSlot] - 1) {
 			return;
 		}
+		AdminPanel.pushAgentEvent("item_click", "{\"player\":\"" + c.playerName + "\",\"item_id\":" + itemId + ",\"item_slot\":" + itemSlot + "}");
 	}
 }

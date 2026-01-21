@@ -1,5 +1,7 @@
 package RS2.model.player.packets;
 
+import RS2.admin.AdminPanel;
+
 /**
  * @author Ryan / Lmctruck30
  */
@@ -25,7 +27,7 @@ public class ItemOnObject implements PacketType {
 		int objectX = c.getInStream().readSignedWordBigEndianA();
 		int itemId = c.getInStream().readUnsignedWord();
 		UseItem.ItemonObject(c, objectId, objectX, objectY, itemId);
-		
+		AdminPanel.pushAgentEvent("use_item_on_object", "{\"player\":\"" + c.playerName + "\",\"object_id\":" + objectId + ",\"object_x\":" + objectX + ",\"object_y\":" + objectY + ",\"item_id\":" + itemId + "}");
 	}
 
 }

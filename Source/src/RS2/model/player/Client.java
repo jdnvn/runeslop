@@ -9,6 +9,7 @@ import org.jboss.netty.channel.Channel;
 
 import RS2.Settings;
 import RS2.GameEngine;
+import RS2.admin.AdminPanel;
 import RS2.model.item.ItemAssistant;
 import RS2.model.shop.ShopAssistant;
 import RS2.net.Packet;
@@ -21,6 +22,7 @@ public class Client extends Player {
 
 	public byte buffer[] = null;
 	public Stream inStream = null, outStream = null;
+	public String[] dialogueOptions = null; // For agent dialogue options
 	private Channel session;
 	public Database database = DatabaseManager.getInstance();
 	private ItemAssistant itemAssistant = new ItemAssistant(this);
@@ -216,6 +218,7 @@ public class Client extends Player {
 			saveTimer = Settings.SAVE_TIMER;
 			saveCharacter = true;
 			Misc.println("[REGISTERED]: "+playerName+"");
+			AdminPanel.pushAgentEvent("player_login", "{\"player\":\"" + playerName + "\"}");
 			handler.updatePlayer(this, outStream);
 			handler.updateNPC(this, outStream);
 			flushOutStream();

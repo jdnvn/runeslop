@@ -160,8 +160,7 @@ public class SqliteDatabase implements Database {
                     "maxhit INTEGER NOT NULL," +
                     "attack INTEGER NOT NULL," +
                     "defence INTEGER NOT NULL," +
-                    "description TEXT," +
-                    "PRIMARY KEY (npc_id)" +
+                    "description TEXT" +
                     ")";
             statement.execute(sql);
         } catch (SQLException e) {
@@ -571,7 +570,7 @@ public class SqliteDatabase implements Database {
             ResultSet rs = statement.executeQuery("SELECT npc_id, spawn_x, spawn_y, height, walk, maxhit, attack, defence, description FROM spawned_npcs ORDER BY npc_id");
             
             while (rs.next() && index < spawnedNPCs.length) {
-                int npcId = rs.getInt("npc_id");
+                int npcType = rs.getInt("npc_id");
                 int spawnX = rs.getInt("spawn_x");
                 int spawnY = rs.getInt("spawn_y");
                 int height = rs.getInt("height");
@@ -581,7 +580,7 @@ public class SqliteDatabase implements Database {
                 int defence = rs.getInt("defence");
                 String description = rs.getString("description");
                 
-                spawnedNPCs[index] = new NPC(npcId, spawnX, spawnY, height, walk, maxhit, attack, defence, description);
+                spawnedNPCs[index] = new NPC(npcType, spawnX, spawnY, height, walk, maxhit, attack, defence, description);
                 index++;
             }
             
@@ -599,7 +598,7 @@ public class SqliteDatabase implements Database {
     public void saveSpawnedNPC(NPC npc) throws Exception {
         try {
             PreparedStatement preparedStatement = conn.prepareStatement("INSERT INTO spawned_npcs (npc_id, spawn_x, spawn_y, height, walk, maxhit, attack, defence, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            preparedStatement.setInt(1, npc.npcId);
+            preparedStatement.setInt(1, npc.npcType);
             preparedStatement.setInt(2, npc.spawnX);
             preparedStatement.setInt(3, npc.spawnY);
             preparedStatement.setInt(4, npc.heightLevel);

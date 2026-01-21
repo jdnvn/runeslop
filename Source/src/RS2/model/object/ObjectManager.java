@@ -21,9 +21,8 @@ public class ObjectManager {
 				updateObject(o);
 				toRemove.add(o);
 			}		
-	
-			objects.remove(o);	
 		}
+		objects.removeAll(toRemove);
 		toRemove.clear();
 	}
 	

@@ -1,6 +1,7 @@
 package RS2.model.player.packets;
 
 import RS2.Settings;
+import RS2.admin.AdminPanel;
 import RS2.model.npc.NPCHandler;
 import RS2.model.player.Client;
 import RS2.model.player.PacketType;
@@ -19,6 +20,7 @@ public class ClickNPC implements PacketType {
 		c.playerIndex = 0;
 		c.clickNpcType = 0;
 		c.getPA().resetFollow();
+
 		switch(packetType) {
 			
 			/**
@@ -35,6 +37,9 @@ public class ClickNPC implements PacketType {
 				c.npcIndex = 0;
 				break;
 			}	
+
+			AdminPanel.pushAgentEvent("npc_attack", "{\"player\":\"" + c.playerName + "\",\"npc_id\":" + c.npcIndex + "}");
+
 			if (NPCHandler.npcs[c.npcIndex].MaxHP == 0) {
 				c.npcIndex = 0;
 				break;
@@ -123,7 +128,9 @@ public class ClickNPC implements PacketType {
 			if(NPCHandler.npcs[c.npcIndex] == null ){
 				break;
 			}
-			
+
+			AdminPanel.pushAgentEvent("npc_mage_attack", "{\"player\":\"" + c.playerName + "\",\"npc_id\":" + c.npcIndex + "}");
+
 			if(NPCHandler.npcs[c.npcIndex].MaxHP == 0 || NPCHandler.npcs[c.npcIndex].npcType == 944){
 				c.sendMessage("You can't attack this npc.");
 				break;
@@ -154,7 +161,6 @@ public class ClickNPC implements PacketType {
 					c.attackTimer++;
 				}	
 			}
-	
 			break;
 			
 			case FIRST_CLICK:
@@ -186,6 +192,7 @@ public class ClickNPC implements PacketType {
 					}
 				});
 				}
+				AdminPanel.pushAgentEvent("npc_click", "{\"player\":\"" + c.playerName + "\",\"npc_id\":" + c.npcClickIndex + "}");
 				break;
 			
 			case SECOND_CLICK:
@@ -217,6 +224,7 @@ public class ClickNPC implements PacketType {
 					}
 				});
 				}
+				AdminPanel.pushAgentEvent("npc_click", "{\"player\":\"" + c.playerName + "\",\"npc_id\":" + c.npcClickIndex + "}");
 				break;
 			
 			case THIRD_CLICK:
@@ -248,6 +256,7 @@ public class ClickNPC implements PacketType {
 					}
 					});
 				}
+				AdminPanel.pushAgentEvent("npc_click", "{\"player\":\"" + c.playerName + "\",\"npc_id\":" + c.npcClickIndex + "}");
 				break;
 		}
 
