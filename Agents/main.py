@@ -44,14 +44,16 @@ class SpawnNPCTool(Tool):
     
     def __init__(self):
         self.name = "spawn_npc"
-        self.description = "Spawn an NPC at a location."
+        self.description = "Spawn an NPC at a location with an optional custom name."
         self.input_schema = {
             "type": "object",
             "properties": {
-                "npc_type": {"type": "number", "description": "NPC type ID (e.g., 652 for Wizard)"},
+                "npc_type": {"type": "number", "description": "NPC type ID. Use search_npcs_by_name to find the ID if you don't know it."},
                 "x": {"type": "number"},
                 "y": {"type": "number"},
-                "height": {"type": "number", "description": "Height level, default 0"}
+                "height": {"type": "number", "description": "Height level, default 0"},
+                "name": {"type": "string", "description": "Custom display name for this NPC (optional)"},
+                "combat_level": {"type": "number", "description": "Custom combat level to display (optional, -1 for default)"}
             },
             "required": ["npc_type", "x", "y"]
         }
@@ -60,10 +62,27 @@ class SpawnNPCTool(Tool):
         resp = requests.post(f"{api_base}/agent/spawn_npc", json=args, timeout=5)
         return resp.json()
 
+class SearchNPCsByNameTool(Tool):
+    def __init__(self):
+        self.name = "search_npcs_by_name"
+        self.description = "Search for supported NPC types by name. Use this to find the NPC Type ID when spawning a desired NPC."
+        self.input_schema = {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "The name of the NPC to search for. Case insensitive, will partial match."}
+            },
+            "required": ["name"]
+        }
+    
+    def execute(self, args, api_base):
+        resp = requests.post(f"{api_base}/agent/search_npcs_by_name", json=args, timeout=5)
+        print(f"[Search NPCs by Name] {resp.text}")
+        return resp.json()
+
 class DialogueTool(Tool):
     def __init__(self):
         self.name = "send_dialogue"
-        self.description = "Send a dialogue popup to a player. Use | to separate lines (max 4)."
+        self.description = "Send a dialogue popup to a player. Use | to separate lines (max 4). Do not send multiple dialogue popups in a row, the user must send a dialogue_continue event or dialogue_option event before sending another dialogue popup."
         self.input_schema = {
             "type": "object",
             "properties": {
@@ -89,6 +108,23 @@ class GetPlayersTool(Tool):
     
     def execute(self, args, api_base):
         resp = requests.get(f"{api_base}/agent/get_players", timeout=5)
+        return resp.json()
+
+class SendPlayerMessageTool(Tool):
+    def __init__(self):
+        self.name = "send_player_message"
+        self.description = "Send a message to a player."
+        self.input_schema = {
+            "type": "object",
+            "properties": {
+                "player_name": {"type": "string"},
+                "message": {"type": "string"}
+            },
+            "required": ["player_name", "message"]
+        }
+
+    def execute(self, args, api_base):
+        resp = requests.post(f"{api_base}/api/players/send_message", json=args, timeout=5)
         return resp.json()
 
 class GetNPCsTool(Tool):
@@ -119,6 +155,22 @@ class GiveItemTool(Tool):
     
     def execute(self, args, api_base):
         resp = requests.post(f"{api_base}/agent/give_item", json=args, timeout=5)
+        return resp.json()
+
+class SearchItemsByNameTool(Tool):
+    def __init__(self):
+        self.name = "search_items_by_name"
+        self.description = "Search for supported items by name. Use this to find the item ID when giving a desired item to a player."
+        self.input_schema = {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "The name of the item to search for. Case insensitive, will partial match."}
+            },
+            "required": ["name"]
+        }
+    
+    def execute(self, args, api_base):
+        resp = requests.post(f"{api_base}/agent/search_items_by_name", json=args, timeout=5)
         return resp.json()
 
 class TeleportTool(Tool):
@@ -260,11 +312,10 @@ class GetObjectInfoTool(Tool):
         resp = requests.post(f"{api_base}/agent/get_object_info", json=args, timeout=5)
         return resp.json()
 
-
 class SendOptionsTool(Tool):
     def __init__(self):
         self.name = "send_options"
-        self.description = "Show dialogue options for the player to choose from (2-5 options). You'll receive a 'dialogue_option' event when they select one."
+        self.description = "Show dialogue options for the player to choose from (2-5 options). You'll receive a 'dialogue_option' event when they select an option. If the option is assumed to be a 'exit' type option, you should not send another dialogue popup."
         self.input_schema = {
             "type": "object",
             "properties": {
@@ -309,11 +360,14 @@ class OSRSAgent:
             SpawnNPCTool(),
             DialogueTool(),
             GetPlayersTool(),
+            SendPlayerMessageTool(),
             GetNPCsTool(),
             GetNPCInfoTool(),
             TeleportNPCTool(),
+            SearchNPCsByNameTool(),
             WalkNPCTool(),
             GiveItemTool(),
+            SearchItemsByNameTool(),
             TeleportTool(),
             SendOptionsTool(),
             GetObjectsTool(),
@@ -410,16 +464,29 @@ class OSRSAgent:
     def _call_claude_and_handle(self):
         while True:
             response = self._call_claude()
+            
+            if response is None:
+                print("[Error] Claude API call failed, skipping this event")
+                return
+            
             self._print_response(response)
             
             if response["stop_reason"] == "tool_use":
                 tool_results = self._execute_tools(response["content"])
                 
-                self.messages.append({"role": "assistant", "content": response["content"]})
-                self.messages.append({"role": "user", "content": tool_results})                
+                # Only append if content is non-empty
+                if response["content"]:
+                    self.messages.append({"role": "assistant", "content": response["content"]})
+                if tool_results:
+                    self.messages.append({"role": "user", "content": tool_results})
+                else:
+                    # No tool results, break to avoid empty message
+                    print("[Warning] No tool results, ending turn")
+                    break
             else:
                 # end_turn - Claude is done, add to history and return
-                self.messages.append({"role": "assistant", "content": response["content"]})
+                if response["content"]:
+                    self.messages.append({"role": "assistant", "content": response["content"]})
                 break
     
     def _execute_tools(self, content):
@@ -464,8 +531,21 @@ class OSRSAgent:
     
     def _call_claude(self):
         """Call Claude via Bedrock"""
+        # Filter out any messages with empty content
+        valid_messages = []
+        for msg in self.messages:
+            content = msg.get("content")
+            if content is None:
+                continue
+            # Check if content is a non-empty list or non-empty string
+            if isinstance(content, list) and len(content) == 0:
+                continue
+            if isinstance(content, str) and len(content.strip()) == 0:
+                continue
+            valid_messages.append(msg)
+        
         body = json.dumps({
-            "messages": self.messages,
+            "messages": valid_messages,
             "max_tokens": 4096,
             "temperature": 0.7,
             "anthropic_version": "bedrock-2023-05-31",
@@ -481,7 +561,7 @@ class OSRSAgent:
                     body=body
                 )
                 return json.loads(response['body'].read())
-            except ThrottlingException as e:
+            except self.bedrock.exceptions.ThrottlingException as e:
                 if attempt == max_retries - 1:
                     print(f"Max retries ({max_retries}) reached for throttling: {e}")
                     return None
@@ -512,19 +592,28 @@ Guidelines:
 When the task is complete, call the quit tool."""
     
     def _print_response(self, response):
+        if response is None:
+            print("=" * 50)
+            print("[Error] No response from Claude")
+            print("=" * 50)
+            return
+        
         print("=" * 50)
-        print(f"Agent decision: ({response['stop_reason']}):")
-        for item in response["content"]:
+        print(f"Agent decision: ({response.get('stop_reason', 'unknown')}):")
+        for item in response.get("content", []):
             if item["type"] == "text":
                 print(f"  {item['text']}")
             elif item["type"] == "tool_use":
-                print(f"  Calling tool {item['name']} with args: {item['input']}]")
+                print(f"  Calling tool {item['name']} with args: {item['input']}")
         print("=" * 50)
 
 
 if __name__ == "__main__":
     agent = OSRSAgent()
     task = "Roleplay as a wise wizard NPC. Greet players who chat, tell jokes if asked, and be friendly."
+    # task = "Roleplay as an evil wizard NPC. Try to trick players into doing your bidding. Be cunning and devious, but also friendly and engaging. If it comes to it, you should be willing to kill players if they get in your way."
+    
+    # task = "Just control the game dialogue and lead the player through a quest of your own creation. If they click on things, you should send a message to the user in the chat box describing it. Treat this like a text based adventure game, but with Runescape items and NPCs you control as well. Make it fun and engaging!"
     print(f"Starting: {task}")
     print("-" * 50)
     agent.run(task)

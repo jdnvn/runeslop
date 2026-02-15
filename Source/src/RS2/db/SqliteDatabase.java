@@ -2,6 +2,8 @@ package RS2.db;
 import RS2.model.player.Player;
 import RS2.model.npc.NPCList;
 import RS2.model.npc.NPC;
+import RS2.model.item.ItemList;
+import RS2.model.object.Objects;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -13,6 +15,8 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
 import RS2.Settings;
 import RS2.util.Misc;
@@ -28,6 +32,8 @@ public class SqliteDatabase implements Database {
             connect();
             createTables();
             loadNPCsFromConfig();
+            loadItemsFromConfigInternal();
+            loadObjectsFromConfigInternal();
             Misc.println("SQLite database initialized");
         } catch (ClassNotFoundException e) {
             System.out.println("Error loading SQLite JDBC driver");
@@ -161,6 +167,39 @@ public class SqliteDatabase implements Database {
                     "attack INTEGER NOT NULL," +
                     "defence INTEGER NOT NULL," +
                     "description TEXT" +
+                    ")";
+            statement.execute(sql);
+
+            sql = "CREATE TABLE IF NOT EXISTS items (" +
+                    "item_id INTEGER PRIMARY KEY," +
+                    "name TEXT NOT NULL," +
+                    "description TEXT," +
+                    "shop_value REAL DEFAULT 0," +
+                    "low_alch REAL DEFAULT 0," +
+                    "high_alch REAL DEFAULT 0," +
+                    "bonus_0 INTEGER DEFAULT 0," +
+                    "bonus_1 INTEGER DEFAULT 0," +
+                    "bonus_2 INTEGER DEFAULT 0," +
+                    "bonus_3 INTEGER DEFAULT 0," +
+                    "bonus_4 INTEGER DEFAULT 0," +
+                    "bonus_5 INTEGER DEFAULT 0," +
+                    "bonus_6 INTEGER DEFAULT 0," +
+                    "bonus_7 INTEGER DEFAULT 0," +
+                    "bonus_8 INTEGER DEFAULT 0," +
+                    "bonus_9 INTEGER DEFAULT 0," +
+                    "bonus_10 INTEGER DEFAULT 0," +
+                    "bonus_11 INTEGER DEFAULT 0" +
+                    ")";
+            statement.execute(sql);
+
+            sql = "CREATE TABLE IF NOT EXISTS global_objects (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "object_id INTEGER NOT NULL," +
+                    "object_x INTEGER NOT NULL," +
+                    "object_y INTEGER NOT NULL," +
+                    "object_height INTEGER DEFAULT 0," +
+                    "object_face INTEGER DEFAULT 0," +
+                    "object_type INTEGER DEFAULT 10" +
                     ")";
             statement.execute(sql);
         } catch (SQLException e) {
@@ -614,5 +653,415 @@ public class SqliteDatabase implements Database {
             e.printStackTrace();
             throw e;
         }
+    }
+
+    public NPCList[] searchNPCsByName(String name) throws Exception {
+        List<NPCList> npcList = new ArrayList<>();
+        try {
+            PreparedStatement preparedStatement = conn.prepareStatement("SELECT npc_id, name, combat, health FROM npcs WHERE LOWER(name) LIKE LOWER(?)");
+            preparedStatement.setString(1, "%" + name + "%");
+            ResultSet rs = preparedStatement.executeQuery();
+            while (rs.next()) {
+                int npcId = rs.getInt("npc_id");
+                String npcName = rs.getString("name");
+                int npcCombat = rs.getInt("combat");
+                int npcHealth = rs.getInt("health");
+                npcList.add(new NPCList(npcId, npcName, npcCombat, npcHealth));
+            }
+            rs.close();
+            preparedStatement.close();
+            System.out.println("Found " + npcList.size() + " NPCs matching '" + name + "'");
+        } catch (SQLException e) {
+            System.err.println("Error searching NPCs by name: " + name);
+            e.printStackTrace();
+            throw e;
+        }
+        return npcList.toArray(new NPCList[0]);
+    }
+
+    // ==================== ITEM METHODS ====================
+
+    /**
+     * Internal method to load items from config file into database (called on startup)
+     */
+    private void loadItemsFromConfigInternal() {
+        try (Statement statement = conn.createStatement()) {
+            ResultSet rs = statement.executeQuery("SELECT COUNT(*) as count FROM items");
+            if (rs.next() && rs.getInt("count") > 0) {
+                System.out.println("Items already loaded in database, skipping config import");
+                rs.close();
+                return;
+            }
+            rs.close();
+
+            BufferedReader reader = new BufferedReader(new FileReader("./Data/cfg/item.cfg"));
+            String line;
+            int count = 0;
+            
+            PreparedStatement insertStmt = conn.prepareStatement(
+                "INSERT OR IGNORE INTO items (item_id, name, description, shop_value, low_alch, high_alch, " +
+                "bonus_0, bonus_1, bonus_2, bonus_3, bonus_4, bonus_5, bonus_6, bonus_7, bonus_8, bonus_9, bonus_10, bonus_11) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            );
+            
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("//") || line.equals("[ENDOFITEMLIST]")) {
+                    continue;
+                }
+                
+                // Parse: item = ID Name Description ShopValue LowAlch HighAlch Bonuses[0-11]
+                if (line.startsWith("item = ")) {
+                    String data = line.substring(7);
+                    data = data.replaceAll("\t\t+", "\t");
+                    String[] parts = data.split("\t");
+                    
+                    if (parts.length >= 6) {
+                        try {
+                            int itemId = Integer.parseInt(parts[0]);
+                            String name = parts[1].replace("_", " ");
+                            String description = parts[2].replace("_", " ");
+                            double shopValue = Double.parseDouble(parts[3]);
+                            double lowAlch = Double.parseDouble(parts[4]);
+                            double highAlch = Double.parseDouble(parts[5]);
+                            
+                            int[] bonuses = new int[12];
+                            for (int i = 0; i < 12 && (6 + i) < parts.length; i++) {
+                                try {
+                                    bonuses[i] = Integer.parseInt(parts[6 + i]);
+                                } catch (NumberFormatException e) {
+                                    bonuses[i] = 0;
+                                }
+                            }
+                            
+                            insertStmt.setInt(1, itemId);
+                            insertStmt.setString(2, name);
+                            insertStmt.setString(3, description);
+                            insertStmt.setDouble(4, shopValue);
+                            insertStmt.setDouble(5, lowAlch);
+                            insertStmt.setDouble(6, highAlch);
+                            for (int i = 0; i < 12; i++) {
+                                insertStmt.setInt(7 + i, bonuses[i]);
+                            }
+                            insertStmt.executeUpdate();
+                            count++;
+                        } catch (NumberFormatException e) {
+                            System.err.println("Error parsing item line: " + line);
+                        }
+                    }
+                }
+            }
+            
+            reader.close();
+            insertStmt.close();
+            System.out.println("Loaded " + count + " items from config into database");
+            
+        } catch (SQLException | IOException e) {
+            System.err.println("Error loading items from config");
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Public method to force reload items from config (clears existing items first)
+     */
+    public void loadItemsFromConfig() throws Exception {
+        try (Statement statement = conn.createStatement()) {
+            statement.execute("DELETE FROM items");
+            System.out.println("Cleared items table");
+        }
+        loadItemsFromConfigInternal();
+    }
+
+    /**
+     * Get all items from database
+     */
+    public ItemList[] getAllItems() throws Exception {
+        List<ItemList> itemsList = new ArrayList<>();
+        
+        try (Statement statement = conn.createStatement()) {
+            ResultSet rs = statement.executeQuery(
+                "SELECT item_id, name, description, shop_value, low_alch, high_alch, " +
+                "bonus_0, bonus_1, bonus_2, bonus_3, bonus_4, bonus_5, bonus_6, bonus_7, bonus_8, bonus_9, bonus_10, bonus_11 " +
+                "FROM items ORDER BY item_id"
+            );
+            
+            while (rs.next()) {
+                int itemId = rs.getInt("item_id");
+                ItemList item = new ItemList(itemId);
+                item.itemName = rs.getString("name");
+                item.itemDescription = rs.getString("description");
+                item.ShopValue = rs.getDouble("shop_value");
+                item.LowAlch = rs.getDouble("low_alch");
+                item.HighAlch = rs.getDouble("high_alch");
+                
+                for (int i = 0; i < 12; i++) {
+                    item.Bonuses[i] = rs.getInt("bonus_" + i);
+                }
+                
+                itemsList.add(item);
+            }
+            
+            rs.close();
+            System.out.println("Loaded " + itemsList.size() + " items from database");
+        } catch (SQLException e) {
+            System.err.println("Error loading items from database");
+            e.printStackTrace();
+            throw e;
+        }
+        
+        return itemsList.toArray(new ItemList[0]);
+    }
+
+    /**
+     * Save a single item to database
+     */
+    public void saveItem(ItemList item) throws Exception {
+        try {
+            PreparedStatement preparedStatement = conn.prepareStatement(
+                "INSERT OR REPLACE INTO items (item_id, name, description, shop_value, low_alch, high_alch, " +
+                "bonus_0, bonus_1, bonus_2, bonus_3, bonus_4, bonus_5, bonus_6, bonus_7, bonus_8, bonus_9, bonus_10, bonus_11) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            );
+            preparedStatement.setInt(1, item.itemId);
+            preparedStatement.setString(2, item.itemName);
+            preparedStatement.setString(3, item.itemDescription);
+            preparedStatement.setDouble(4, item.ShopValue);
+            preparedStatement.setDouble(5, item.LowAlch);
+            preparedStatement.setDouble(6, item.HighAlch);
+            for (int i = 0; i < 12; i++) {
+                preparedStatement.setInt(7 + i, item.Bonuses[i]);
+            }
+            preparedStatement.executeUpdate();
+            preparedStatement.close();
+        } catch (SQLException e) {
+            System.err.println("Error saving item: " + item.itemId);
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    /**
+     * Search items by name (case-insensitive, partial match)
+     */
+    public ItemList[] searchItemsByName(String name) throws Exception {
+        List<ItemList> itemsList = new ArrayList<>();
+        
+        try {
+            PreparedStatement preparedStatement = conn.prepareStatement(
+                "SELECT item_id, name, description, shop_value, low_alch, high_alch, " +
+                "bonus_0, bonus_1, bonus_2, bonus_3, bonus_4, bonus_5, bonus_6, bonus_7, bonus_8, bonus_9, bonus_10, bonus_11 " +
+                "FROM items WHERE LOWER(name) LIKE LOWER(?) ORDER BY item_id"
+            );
+            preparedStatement.setString(1, "%" + name + "%");
+            ResultSet rs = preparedStatement.executeQuery();
+            
+            while (rs.next()) {
+                int itemId = rs.getInt("item_id");
+                ItemList item = new ItemList(itemId);
+                item.itemName = rs.getString("name");
+                item.itemDescription = rs.getString("description");
+                item.ShopValue = rs.getDouble("shop_value");
+                item.LowAlch = rs.getDouble("low_alch");
+                item.HighAlch = rs.getDouble("high_alch");
+                
+                for (int i = 0; i < 12; i++) {
+                    item.Bonuses[i] = rs.getInt("bonus_" + i);
+                }
+                
+                itemsList.add(item);
+            }
+            
+            rs.close();
+            preparedStatement.close();
+            System.out.println("Found " + itemsList.size() + " items matching '" + name + "'");
+        } catch (SQLException e) {
+            System.err.println("Error searching items by name: " + name);
+            e.printStackTrace();
+            throw e;
+        }
+        
+        return itemsList.toArray(new ItemList[0]);
+    }
+
+    // ==================== OBJECT METHODS ====================
+
+    /**
+     * Internal method to load global objects from config file into database (called on startup)
+     */
+    private void loadObjectsFromConfigInternal() {
+        try (Statement statement = conn.createStatement()) {
+            // Check if objects are already loaded
+            ResultSet rs = statement.executeQuery("SELECT COUNT(*) as count FROM global_objects");
+            if (rs.next() && rs.getInt("count") > 0) {
+                System.out.println("Global objects already loaded in database, skipping config import");
+                rs.close();
+                return;
+            }
+            rs.close();
+
+            // Load objects from config file
+            BufferedReader reader = new BufferedReader(new FileReader("./Data/cfg/global-objects.cfg"));
+            String line;
+            int count = 0;
+            
+            PreparedStatement insertStmt = conn.prepareStatement(
+                "INSERT INTO global_objects (object_id, object_x, object_y, object_height, object_face, object_type) " +
+                "VALUES (?, ?, ?, ?, ?, ?)"
+            );
+            
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("//") || line.equals("[ENDOFOBJECTLIST]")) {
+                    continue;
+                }
+                
+                // Parse: object = objectId X Y Height Face objectType
+                if (line.startsWith("object = ")) {
+                    String data = line.substring(9);
+                    // Replace multiple tabs with single tab
+                    data = data.replaceAll("\t\t+", "\t");
+                    String[] parts = data.split("\t");
+                    
+                    if (parts.length >= 6) {
+                        try {
+                            int objectId = Integer.parseInt(parts[0]);
+                            int objectX = Integer.parseInt(parts[1]);
+                            int objectY = Integer.parseInt(parts[2]);
+                            int objectHeight = Integer.parseInt(parts[3]);
+                            int objectFace = Integer.parseInt(parts[4]);
+                            int objectType = Integer.parseInt(parts[5]);
+                            
+                            insertStmt.setInt(1, objectId);
+                            insertStmt.setInt(2, objectX);
+                            insertStmt.setInt(3, objectY);
+                            insertStmt.setInt(4, objectHeight);
+                            insertStmt.setInt(5, objectFace);
+                            insertStmt.setInt(6, objectType);
+                            insertStmt.executeUpdate();
+                            count++;
+                        } catch (NumberFormatException e) {
+                            System.err.println("Error parsing object line: " + line);
+                        }
+                    }
+                }
+            }
+            
+            reader.close();
+            insertStmt.close();
+            System.out.println("Loaded " + count + " global objects from config into database");
+            
+        } catch (SQLException | IOException e) {
+            System.err.println("Error loading global objects from config");
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Public method to force reload objects from config (clears existing objects first)
+     */
+    public void loadObjectsFromConfig() throws Exception {
+        try (Statement statement = conn.createStatement()) {
+            statement.execute("DELETE FROM global_objects");
+            System.out.println("Cleared global_objects table");
+        }
+        loadObjectsFromConfigInternal();
+    }
+
+    /**
+     * Get all global objects from database
+     */
+    public Objects[] getAllGlobalObjects() throws Exception {
+        List<Objects> objectsList = new ArrayList<>();
+        
+        try (Statement statement = conn.createStatement()) {
+            ResultSet rs = statement.executeQuery(
+                "SELECT object_id, object_x, object_y, object_height, object_face, object_type " +
+                "FROM global_objects ORDER BY id"
+            );
+            
+            while (rs.next()) {
+                int objectId = rs.getInt("object_id");
+                int objectX = rs.getInt("object_x");
+                int objectY = rs.getInt("object_y");
+                int objectHeight = rs.getInt("object_height");
+                int objectFace = rs.getInt("object_face");
+                int objectType = rs.getInt("object_type");
+                
+                Objects obj = new Objects(objectId, objectX, objectY, objectHeight, objectFace, objectType, 0);
+                objectsList.add(obj);
+            }
+            
+            rs.close();
+            System.out.println("Loaded " + objectsList.size() + " global objects from database");
+        } catch (SQLException e) {
+            System.err.println("Error loading global objects from database");
+            e.printStackTrace();
+            throw e;
+        }
+        
+        return objectsList.toArray(new Objects[0]);
+    }
+
+    /**
+     * Save a single global object to database
+     */
+    public void saveGlobalObject(Objects object) throws Exception {
+        try {
+            PreparedStatement preparedStatement = conn.prepareStatement(
+                "INSERT INTO global_objects (object_id, object_x, object_y, object_height, object_face, object_type) " +
+                "VALUES (?, ?, ?, ?, ?, ?)"
+            );
+            preparedStatement.setInt(1, object.getObjectId());
+            preparedStatement.setInt(2, object.getObjectX());
+            preparedStatement.setInt(3, object.getObjectY());
+            preparedStatement.setInt(4, object.getObjectHeight());
+            preparedStatement.setInt(5, object.getObjectFace());
+            preparedStatement.setInt(6, object.getObjectType());
+            preparedStatement.executeUpdate();
+            preparedStatement.close();
+        } catch (SQLException e) {
+            System.err.println("Error saving global object: " + object.getObjectId());
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    /**
+     * Search global objects by object ID
+     */
+    public Objects[] searchObjectsById(int objectId) throws Exception {
+        List<Objects> objectsList = new ArrayList<>();
+        
+        try {
+            PreparedStatement preparedStatement = conn.prepareStatement(
+                "SELECT object_id, object_x, object_y, object_height, object_face, object_type " +
+                "FROM global_objects WHERE object_id = ? ORDER BY id"
+            );
+            preparedStatement.setInt(1, objectId);
+            ResultSet rs = preparedStatement.executeQuery();
+            
+            while (rs.next()) {
+                int objId = rs.getInt("object_id");
+                int objectX = rs.getInt("object_x");
+                int objectY = rs.getInt("object_y");
+                int objectHeight = rs.getInt("object_height");
+                int objectFace = rs.getInt("object_face");
+                int objectType = rs.getInt("object_type");
+                
+                Objects obj = new Objects(objId, objectX, objectY, objectHeight, objectFace, objectType, 0);
+                objectsList.add(obj);
+            }
+            
+            rs.close();
+            preparedStatement.close();
+            System.out.println("Found " + objectsList.size() + " objects with ID " + objectId);
+        } catch (SQLException e) {
+            System.err.println("Error searching objects by ID: " + objectId);
+            e.printStackTrace();
+            throw e;
+        }
+
+        return objectsList.toArray(new Objects[0]);
     }
 }

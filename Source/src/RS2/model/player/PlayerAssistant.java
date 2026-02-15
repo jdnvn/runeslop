@@ -125,6 +125,25 @@ public class PlayerAssistant{
 		c.flushOutStream();
 	}
 	
+	/**
+	 * Sends a custom NPC name/combat level override to the client.
+	 * This allows the server to dynamically change how an NPC appears.
+	 * Note: Does not flush - caller should ensure flushOutStream is called after.
+	 * @param npcSlotId The NPC's slot ID in the npcArray
+	 * @param customName The custom name to display (empty string to clear)
+	 * @param customCombatLevel The custom combat level (-1 to use default)
+	 */
+	public void sendNpcOverride(int npcSlotId, String customName, int customCombatLevel) {
+		if (c != null && c.getOutStream() != null) {
+			c.getOutStream().createFrameVarSize(112);
+			c.getOutStream().writeWord(npcSlotId);
+			c.getOutStream().writeWord(customCombatLevel);
+			c.getOutStream().writeString(customName != null ? customName : "");
+			c.getOutStream().endFrameVarSize();
+			// Don't flush here - let it go out with the NPC update packet
+		}
+	}
+	
 	public void createArrow(int type, int id) {
 	if(c != null){
 		c.getOutStream().createFrame(254); //The packet ID

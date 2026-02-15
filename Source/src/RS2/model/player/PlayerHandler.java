@@ -4,6 +4,7 @@ package RS2.model.player;
 
 import RS2.Settings;
 import RS2.GameEngine;
+import RS2.model.npc.NPC;
 import RS2.model.npc.NPCHandler;
 import RS2.util.Misc;
 import RS2.util.Stream;
@@ -189,6 +190,9 @@ public class PlayerHandler {
 			}
 		}
 
+		// Track newly added NPCs that have custom names
+		java.util.List<NPC> newNpcsWithCustomNames = new java.util.ArrayList<>();
+		
 		for (int i = 0; i < NPCHandler.maxNPCs; i++) {
 			if (NPCHandler.npcs[i] != null) {
 				int id = NPCHandler.npcs[i].npcId;
@@ -198,6 +202,10 @@ public class PlayerHandler {
 
 				} else {
 					plr.addNewNPC(NPCHandler.npcs[i], str, updateBlock);
+					// If this NPC has custom name/combat, queue for override packet
+					if (NPCHandler.npcs[i].customName != null || NPCHandler.npcs[i].customCombatLevel >= 0) {
+						newNpcsWithCustomNames.add(NPCHandler.npcs[i]);
+					}
 				}
 			}
 		}
@@ -212,6 +220,17 @@ public class PlayerHandler {
 			str.finishBitAccess();
 		}
 		str.endFrameVarSizeWord();
+		
+		// Send custom name overrides for newly visible NPCs
+		if (!newNpcsWithCustomNames.isEmpty() && plr instanceof Client) {
+			Client c = (Client) plr;
+			for (NPC npc : newNpcsWithCustomNames) {
+				System.out.println("[DEBUG] Sending NPC override to " + c.playerName + " for NPC " + npc.npcId + ": name=" + npc.customName + ", combat=" + npc.customCombatLevel);
+				c.getPA().sendNpcOverride(npc.npcId, 
+					npc.customName != null ? npc.customName : "", 
+					npc.customCombatLevel);
+			}
+		}
 		// }
 	}
 

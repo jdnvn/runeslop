@@ -7103,9 +7103,12 @@ public class client extends RSApplet {
 			return;
 		if(!entityDef.aBoolean84)
 			return;
-		String s = entityDef.name;
-		if(entityDef.combatLevel != 0)
-			s = s + combatDiffColor(myPlayer.combatLevel, entityDef.combatLevel) + " (level-" + entityDef.combatLevel + ")";
+		// Use custom name/combat from NPC if server set it, otherwise use EntityDef
+		NPC npcForMenu = (i >= 0 && i < npcArray.length) ? npcArray[i] : null;
+		String s = (npcForMenu != null) ? npcForMenu.getDisplayName() : entityDef.name;
+		int displayCombat = (npcForMenu != null) ? npcForMenu.getDisplayCombatLevel() : entityDef.combatLevel;
+		if(displayCombat != 0)
+			s = s + combatDiffColor(myPlayer.combatLevel, displayCombat) + " (level-" + displayCombat + ")";
 		if(itemSelected == 1)
 		{
 			menuActionName[menuActionRow] = "Use " + selectedItemName + " with @yel@" + s;
@@ -7158,7 +7161,7 @@ public class client extends RSApplet {
 					if(entityDef.actions[i1] != null && entityDef.actions[i1].equalsIgnoreCase("attack"))
 					{
 						char c = '\0';
-						if(entityDef.combatLevel > myPlayer.combatLevel)
+						if(displayCombat > myPlayer.combatLevel)
 							c = '\u07D0';
 						menuActionName[menuActionRow] = entityDef.actions[i1] + " @yel@" + s;
 						if(i1 == 0)
@@ -12080,6 +12083,18 @@ public class client extends RSApplet {
 					
 				case 61:
 					anInt1055 = inStream.readUnsignedByte();
+					pktType = -1;
+					return true;
+				
+				case 112:
+					// NPC name/combat override from server
+					int npcSlotId = inStream.readUnsignedWord();
+					int customCombat = inStream.readSignedWord();
+					String customNpcName = inStream.readString();
+					if (npcSlotId >= 0 && npcSlotId < npcArray.length && npcArray[npcSlotId] != null) {
+						npcArray[npcSlotId].customName = customNpcName.isEmpty() ? null : customNpcName;
+						npcArray[npcSlotId].customCombatLevel = customCombat;
+					}
 					pktType = -1;
 					return true;
 					

@@ -38,6 +38,10 @@ public class NPC {
 	public int firstAttacker;
 	public String forcedText;
 	public String description;
+	
+	// Custom display overrides (set by agent at runtime)
+	public String customName = null;
+	public int customCombatLevel = -1;
 
 	public NPC(int _npcId, int _npcType) {
 		npcId = _npcId;

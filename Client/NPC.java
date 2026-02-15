@@ -66,4 +66,34 @@ public final class NPC extends Entity
 	}
 
 	public EntityDef desc;
+	
+	// Custom override fields set by server at runtime
+	public String customName = null;
+	public int customCombatLevel = -1;
+	
+	/**
+	 * Gets the display name - custom if set, otherwise from EntityDef
+	 */
+	public String getDisplayName() {
+		if (customName != null) {
+			return customName;
+		}
+		if (desc != null) {
+			return desc.name;
+		}
+		return null;
+	}
+	
+	/**
+	 * Gets the combat level - custom if set, otherwise from EntityDef
+	 */
+	public int getDisplayCombatLevel() {
+		if (customCombatLevel >= 0) {
+			return customCombatLevel;
+		}
+		if (desc != null) {
+			return desc.combatLevel;
+		}
+		return 0;
+	}
 }

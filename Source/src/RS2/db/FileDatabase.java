@@ -4,6 +4,8 @@ import RS2.model.player.PlayerHandler;
 import RS2.model.npc.NPCList;
 import RS2.model.npc.NPCHandler;
 import RS2.model.npc.NPC;
+import RS2.model.item.ItemList;
+import RS2.model.object.Objects;
 import RS2.Settings;
 
 import java.io.BufferedReader;
@@ -12,6 +14,8 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import RS2.util.Misc;
 
@@ -19,6 +23,8 @@ public class FileDatabase implements Database {
     public static final String CHARACTERS_PATH = "./Data/characters/";
     public static final String NPC_FILENAME = "./Data/CFG/npc.cfg";
     public static final String SPAWNED_NPCS_FILENAME = "./Data/CFG/spawn-config.cfg";
+    public static final String ITEMS_FILENAME = "./Data/cfg/item.cfg";
+    public static final String GLOBAL_OBJECTS_FILENAME = "./Data/cfg/global-objects.cfg";
 
     FileDatabase() {}
 
@@ -556,6 +562,18 @@ public class FileDatabase implements Database {
         return null;
     }
 
+	public NPCList[] searchNPCsByName(String name) throws Exception {
+		NPCList[] allNPCs = getAllNPCs();
+		List<NPCList> matchingNPCs = new ArrayList<>();
+		String searchName = name.toLowerCase();
+		for (NPCList npc : allNPCs) {
+			if (npc != null && npc.npcName != null && npc.npcName.toLowerCase().contains(searchName)) {
+				matchingNPCs.add(npc);
+			}
+		}
+		return matchingNPCs.toArray(new NPCList[0]);
+	}
+
     public void saveSpawnedNPC(NPC npc) throws Exception {
         BufferedWriter characterfile = null;
         try {
@@ -572,5 +590,248 @@ public class FileDatabase implements Database {
     private void writeSpawnedNPC(BufferedWriter characterfile, NPC npc) throws IOException {
         characterfile.write("spawn = " + npc.npcId + " " + npc.spawnX + " " + npc.spawnY + " " + npc.heightLevel + " " + npc.walkingType + " " + npc.maxHit + " " + npc.attack + " " + npc.defence + " " + npc.description);
         characterfile.newLine();
+    }
+
+    // ==================== ITEM METHODS ====================
+
+    /**
+     * Get all items from config file
+     */
+    public ItemList[] getAllItems() throws Exception {
+        List<ItemList> itemsList = new ArrayList<>();
+        String line = "";
+        String token = "";
+        String token2 = "";
+        String token2_2 = "";
+        String[] token3 = new String[20];
+        boolean EndOfFile = false;
+        BufferedReader characterfile = null;
+        
+        try {
+            characterfile = new BufferedReader(new FileReader(ITEMS_FILENAME));
+        } catch (FileNotFoundException fileex) {
+            Misc.println(ITEMS_FILENAME + ": file not found.");
+            throw fileex;
+        }
+        
+        try {
+            line = characterfile.readLine();
+        } catch (IOException ioexception) {
+            Misc.println(ITEMS_FILENAME + ": error loading file.");
+            characterfile.close();
+            throw ioexception;
+        }
+        
+        while (EndOfFile == false && line != null) {
+            line = line.trim();
+            int spot = line.indexOf("=");
+            if (spot > -1) {
+                token = line.substring(0, spot);
+                token = token.trim();
+                token2 = line.substring(spot + 1);
+                token2 = token2.trim();
+                token2_2 = token2.replaceAll("\t\t", "\t");
+                token2_2 = token2_2.replaceAll("\t\t", "\t");
+                token2_2 = token2_2.replaceAll("\t\t", "\t");
+                token2_2 = token2_2.replaceAll("\t\t", "\t");
+                token2_2 = token2_2.replaceAll("\t\t", "\t");
+                token3 = token2_2.split("\t");
+                if (token.equals("item")) {
+                    int[] Bonuses = new int[12];
+                    for (int i = 0; i < 12; i++) {
+                        if ((6 + i) < token3.length && token3[(6 + i)] != null) {
+                            try {
+                                Bonuses[i] = Integer.parseInt(token3[(6 + i)]);
+                            } catch (NumberFormatException e) {
+                                Bonuses[i] = 0;
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                    ItemList item = new ItemList(Integer.parseInt(token3[0]));
+                    item.itemName = token3[1].replaceAll("_", " ");
+                    item.itemDescription = token3[2].replaceAll("_", " ");
+                    item.ShopValue = Double.parseDouble(token3[4]);
+                    item.LowAlch = Double.parseDouble(token3[4]);
+                    item.HighAlch = Double.parseDouble(token3[6]);
+                    item.Bonuses = Bonuses;
+                    itemsList.add(item);
+                }
+            } else {
+                if (line.equals("[ENDOFITEMLIST]")) {
+                    try {
+                        characterfile.close();
+                    } catch (IOException ioexception) {
+                    }
+                    System.out.println("Loaded " + itemsList.size() + " items from config file");
+                    return itemsList.toArray(new ItemList[0]);
+                }
+            }
+            try {
+                line = characterfile.readLine();
+            } catch (IOException ioexception1) {
+                EndOfFile = true;
+            }
+        }
+        try {
+            characterfile.close();
+        } catch (IOException ioexception) {
+        }
+        System.out.println("Loaded " + itemsList.size() + " items from config file");
+        return itemsList.toArray(new ItemList[0]);
+    }
+
+    /**
+     * Save an item to config file (appends to file)
+     */
+    public void saveItem(ItemList item) throws Exception {
+        // For file-based storage, we would need to rewrite the entire file
+        // This is a simplified version that just logs what would be saved
+        Misc.println("FileDatabase.saveItem: Would save item " + item.itemId + " - " + item.itemName);
+        // In a full implementation, you would read all items, add/update this one, and rewrite the file
+    }
+
+    /**
+     * Reload items from config - for file database this just returns
+     */
+    public void loadItemsFromConfig() throws Exception {
+        // For file database, getAllItems already loads from config
+        Misc.println("FileDatabase.loadItemsFromConfig: Items are loaded directly from config file");
+    }
+
+    /**
+     * Search items by name (case-insensitive, partial match)
+     */
+    public ItemList[] searchItemsByName(String name) throws Exception {
+        ItemList[] allItems = getAllItems();
+        List<ItemList> matchingItems = new ArrayList<>();
+        String searchName = name.toLowerCase();
+        
+        for (ItemList item : allItems) {
+            if (item != null && item.itemName != null && 
+                item.itemName.toLowerCase().contains(searchName)) {
+                matchingItems.add(item);
+            }
+        }
+        
+        System.out.println("Found " + matchingItems.size() + " items matching '" + name + "'");
+        return matchingItems.toArray(new ItemList[0]);
+    }
+
+    // ==================== OBJECT METHODS ====================
+
+    /**
+     * Get all global objects from config file
+     */
+    public Objects[] getAllGlobalObjects() throws Exception {
+        List<Objects> objectsList = new ArrayList<>();
+        String line = "";
+        String token = "";
+        String token2 = "";
+        String token2_2 = "";
+        String[] token3 = new String[10];
+        boolean EndOfFile = false;
+        BufferedReader objectFile = null;
+        
+        try {
+            objectFile = new BufferedReader(new FileReader(GLOBAL_OBJECTS_FILENAME));
+        } catch (FileNotFoundException fileex) {
+            Misc.println(GLOBAL_OBJECTS_FILENAME + ": file not found.");
+            throw fileex;
+        }
+        
+        try {
+            line = objectFile.readLine();
+        } catch (IOException ioexception) {
+            Misc.println(GLOBAL_OBJECTS_FILENAME + ": error loading file.");
+            objectFile.close();
+            throw ioexception;
+        }
+        
+        while (EndOfFile == false && line != null) {
+            line = line.trim();
+            int spot = line.indexOf("=");
+            if (spot > -1) {
+                token = line.substring(0, spot);
+                token = token.trim();
+                token2 = line.substring(spot + 1);
+                token2 = token2.trim();
+                token2_2 = token2.replaceAll("\t\t", "\t");
+                token2_2 = token2_2.replaceAll("\t\t", "\t");
+                token2_2 = token2_2.replaceAll("\t\t", "\t");
+                token2_2 = token2_2.replaceAll("\t\t", "\t");
+                token2_2 = token2_2.replaceAll("\t\t", "\t");
+                token3 = token2_2.split("\t");
+                if (token.equals("object")) {
+                    Objects object = new Objects(
+                        Integer.parseInt(token3[0]),  // objectId
+                        Integer.parseInt(token3[1]),  // x
+                        Integer.parseInt(token3[2]),  // y
+                        Integer.parseInt(token3[3]),  // height
+                        Integer.parseInt(token3[4]),  // face
+                        Integer.parseInt(token3[5]),  // type
+                        0  // ticks
+                    );
+                    objectsList.add(object);
+                }
+            } else {
+                if (line.equals("[ENDOFOBJECTLIST]")) {
+                    try {
+                        objectFile.close();
+                    } catch (IOException ioexception) {
+                    }
+                    System.out.println("Loaded " + objectsList.size() + " global objects from config file");
+                    return objectsList.toArray(new Objects[0]);
+                }
+            }
+            try {
+                line = objectFile.readLine();
+            } catch (IOException ioexception1) {
+                EndOfFile = true;
+            }
+        }
+        try {
+            objectFile.close();
+        } catch (IOException ioexception) {
+        }
+        System.out.println("Loaded " + objectsList.size() + " global objects from config file");
+        return objectsList.toArray(new Objects[0]);
+    }
+
+    /**
+     * Save a global object to config file (appends to file)
+     */
+    public void saveGlobalObject(Objects object) throws Exception {
+        // For file-based storage, we would need to rewrite the entire file
+        // This is a simplified version that just logs what would be saved
+        Misc.println("FileDatabase.saveGlobalObject: Would save object " + object.getObjectId() + 
+                     " at " + object.getObjectX() + "," + object.getObjectY());
+        // In a full implementation, you would read all objects, add/update this one, and rewrite the file
+    }
+
+    /**
+     * Reload objects from config - for file database this just returns
+     */
+    public void loadObjectsFromConfig() throws Exception {
+        // For file database, getAllGlobalObjects already loads from config
+        Misc.println("FileDatabase.loadObjectsFromConfig: Objects are loaded directly from config file");
+    }
+
+    /**
+     * Search global objects by object ID
+     */
+    public Objects[] searchObjectsById(int objectId) throws Exception {
+        Objects[] allObjects = getAllGlobalObjects();
+        List<Objects> matchingObjects = new ArrayList<>();
+        
+        for (Objects obj : allObjects) {
+            if (obj != null && obj.getObjectId() == objectId) {
+                matchingObjects.add(obj);
+            }
+        }
+        
+        System.out.println("Found " + matchingObjects.size() + " objects with ID " + objectId);
+        return matchingObjects.toArray(new Objects[0]);
     }
 }

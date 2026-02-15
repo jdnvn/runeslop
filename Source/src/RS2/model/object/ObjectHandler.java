@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import RS2.db.Database;
+import RS2.db.DatabaseManager;
 import RS2.model.player.Client;
 import RS2.model.player.Player;
 import RS2.model.player.PlayerHandler;
@@ -19,9 +21,61 @@ import RS2.util.Misc;
 public class ObjectHandler {
 
 	public List<Objects> globalObjects = new ArrayList<Objects>();
+	private Database database = DatabaseManager.getInstance();
 
 	public ObjectHandler() {
-//		loadGlobalObjects("./Data/cfg/global-objects.cfg"); - Cleaned
+		// Load objects from database (which automatically imports from config if empty)
+		loadObjectsFromDatabase();
+	}
+	
+	/**
+	 * Loads global objects from database
+	 */
+	public boolean loadObjectsFromDatabase() {
+		try {
+			Objects[] dbObjects = database.getAllGlobalObjects();
+			int count = 0;
+			for (Objects obj : dbObjects) {
+				if (obj != null) {
+					globalObjects.add(obj);
+					count++;
+				}
+			}
+			Misc.println("Loaded " + count + " global objects from database into ObjectHandler");
+			return true;
+		} catch (Exception e) {
+			Misc.println("Error loading objects from database, falling back to config file");
+			e.printStackTrace();
+			return loadGlobalObjects("./Data/cfg/global-objects.cfg");
+		}
+	}
+	
+	/**
+	 * Force reload objects from config file into database
+	 */
+	public void reloadObjectsFromConfig() {
+		try {
+			globalObjects.clear();
+			database.loadObjectsFromConfig();
+			loadObjectsFromDatabase();
+			Misc.println("Reloaded objects from config into database");
+		} catch (Exception e) {
+			Misc.println("Error reloading objects from config");
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Save a new global object to database
+	 */
+	public void saveObjectToDatabase(Objects object) {
+		try {
+			database.saveGlobalObject(object);
+			Misc.println("Saved object " + object.getObjectId() + " to database");
+		} catch (Exception e) {
+			Misc.println("Error saving object to database");
+			e.printStackTrace();
+		}
 	}
 
 	/**

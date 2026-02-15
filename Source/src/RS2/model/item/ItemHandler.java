@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Scanner;
 
 import RS2.Settings;
+import RS2.db.Database;
+import RS2.db.DatabaseManager;
 import RS2.model.player.Client;
 import RS2.model.player.Player;
 import RS2.model.player.PlayerHandler;
@@ -23,13 +25,68 @@ public class ItemHandler {
 
 	public List<GroundItem> items = new ArrayList<GroundItem>();
 	public static final int HIDE_TICKS = 100;
+	private Database database = DatabaseManager.getInstance();
 	
 	public ItemHandler() {			
 		for(int i = 0; i < Settings.ITEM_LIMIT; i++) {
 			ItemList[i] = null;
 		}
-		loadItemList("item.cfg");
+		// Load items from database (which automatically imports from config if empty)
+		loadItemsFromDatabase();
 		loadItemPrices("prices.txt");
+	}
+	
+	/**
+	 * Loads items from database
+	 */
+	public boolean loadItemsFromDatabase() {
+		try {
+			ItemList[] dbItems = database.getAllItems();
+			int count = 0;
+			for (ItemList item : dbItems) {
+				if (item != null && item.itemId < Settings.ITEM_LIMIT) {
+					ItemList[item.itemId] = item;
+					count++;
+				}
+			}
+			Misc.println("Loaded " + count + " items from database into ItemHandler");
+			return true;
+		} catch (Exception e) {
+			Misc.println("Error loading items from database, falling back to config file");
+			e.printStackTrace();
+			return loadItemList("item.cfg");
+		}
+	}
+	
+	/**
+	 * Force reload items from config file into database
+	 */
+	public void reloadItemsFromConfig() {
+		try {
+			database.loadItemsFromConfig();
+			loadItemsFromDatabase();
+			Misc.println("Reloaded items from config into database");
+		} catch (Exception e) {
+			Misc.println("Error reloading items from config");
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Save an item definition to the database
+	 */
+	public void saveItemToDatabase(ItemList item) {
+		try {
+			database.saveItem(item);
+			// Also update local cache
+			if (item.itemId < Settings.ITEM_LIMIT) {
+				ItemList[item.itemId] = item;
+			}
+			Misc.println("Saved item " + item.itemId + " (" + item.itemName + ") to database");
+		} catch (Exception e) {
+			Misc.println("Error saving item to database");
+			e.printStackTrace();
+		}
 	}
 	
 	/**
